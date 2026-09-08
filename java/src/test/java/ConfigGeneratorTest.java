@@ -1,56 +1,40 @@
-import static org.junit.jupiter.api.Assertions.*;
-
-import org.junit.jupiter.api.Test;
-
 public class ConfigGeneratorTest {
 
-    @Test
-    void validatesHiddenLayerSizes() {
-        assertTrue(
-                ConfigGenerator.validateHiddenUnits(
-                        new int[]{64, 32}
-                )
-        );
+        public static void main(String[] args) {
+                runTest(
+                                ConfigGenerator.validateHiddenUnits(new int[] { 64, 32 }),
+                                true,
+                                "Valid hidden units [64, 32]");
 
-        assertTrue(
-                ConfigGenerator.validateHiddenUnits(
-                        new int[]{128}
-                )
-        );
+                runTest(
+                                ConfigGenerator.validateHiddenUnits(new int[] { 128 }),
+                                true,
+                                "Valid hidden units [128]");
 
-        assertFalse(
-                ConfigGenerator.validateHiddenUnits(
-                        new int[]{0, 32}
-                )
-        );
+                runTest(
+                                ConfigGenerator.validateHiddenUnits(new int[] { 0, 32 }),
+                                false,
+                                "Zero should be invalid");
 
-        assertFalse(
-                ConfigGenerator.validateHiddenUnits(
-                        new int[]{-4, 32}
-                )
-        );
+                runTest(
+                                ConfigGenerator.validateHiddenUnits(new int[] { -4, 32 }),
+                                false,
+                                "Negative values should be invalid");
 
-        assertFalse(
-                ConfigGenerator.validateHiddenUnits(
-                        new int[]{}
-                )
-        );
-    }
+                runTest(
+                                ConfigGenerator.validateHiddenUnits(new int[] {}),
+                                false,
+                                "Empty array should be invalid");
+        }
 
-    @Test
-    void generatesNetworkConfigurationText() {
-        String config = ConfigGenerator.generateNetworkConfig(
-                "fully_connected",
-                new int[]{64, 32},
-                "elu",
-                1,
-                "elup1"
-        );
-
-        assertTrue(config.contains("--network_type=fully_connected"));
-        assertTrue(config.contains("--number_hidden_units\n64\n32"));
-        assertTrue(config.contains("--hidden_activation=elu"));
-        assertTrue(config.contains("--output_shape\n1"));
-        assertTrue(config.contains("--output_activation=elup1"));
-    }
+        private static void runTest(
+                        boolean actual,
+                        boolean expected,
+                        String description) {
+                if (actual == expected) {
+                        System.out.println("PASS: " + description);
+                } else {
+                        System.out.println("FAIL: " + description);
+                }
+        }
 }

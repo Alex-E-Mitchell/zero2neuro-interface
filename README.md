@@ -81,7 +81,6 @@ zero2neuro-interface/
 |   |-- configGenerator.test.js
 |   `-- package.json
 `-- java/
-    |-- pom.xml
     `-- src/
         |-- main/java/
         |   `-- ConfigGenerator.java
@@ -89,9 +88,13 @@ zero2neuro-interface/
             `-- ConfigGeneratorTest.java
 ```
 
+The Java `out/` directory is generated when the Java files are compiled and should not be committed to the repository.
+
 ## Running the Tests
 
 ### Python
+
+Requires Python 3.
 
 From the repository root:
 
@@ -99,27 +102,56 @@ From the repository root:
 python -m unittest discover -s python/tests
 ```
 
+A successful run should end with:
+
+```text
+OK
+```
+
 ### JavaScript
 
 Requires a recent version of Node.js.
+
+From the repository root:
 
 ```bash
 cd javascript
 npm test
 ```
 
-The JavaScript tests use Node's built-in test runner, so there are no third-party packages to install.
+The JavaScript tests use Node's built-in test runner, so there are no third-party testing packages to install.
+
+On Windows PowerShell, if `npm test` is blocked by the PowerShell execution policy, use:
+
+```powershell
+npm.cmd test
+```
+
+A successful run should report that all JavaScript tests passed.
 
 ### Java
 
-Requires Java and Maven.
+Requires a Java Development Kit (JDK). Maven and JUnit are not required for the current Java test.
 
-```bash
+From the repository root:
+
+```powershell
 cd java
-mvn test
+javac src\main\java\ConfigGenerator.java src\test\java\ConfigGeneratorTest.java -d out
+java -cp out ConfigGeneratorTest
 ```
 
-The Java tests use JUnit 5 through Maven.
+The first command compiles both Java files into the generated `out` directory. The second command runs `ConfigGeneratorTest`.
+
+A successful run should display:
+
+```text
+PASS: Valid hidden units [64, 32]
+PASS: Valid hidden units [128]
+PASS: Zero should be invalid
+PASS: Negative values should be invalid
+PASS: Empty array should be invalid
+```
 
 ## Planned Technologies
 
@@ -127,9 +159,11 @@ The final technology stack should be confirmed with the group and mentor, but a 
 
 - **Python** - backend logic and Zero2Neuro integration
 - **Flask or FastAPI** - possible web backend
-- **HTML/CSS/JavaScript** - browser interface
+- **HTML/CSS/JavaScript** - browser-based interface
 - **Bootstrap** - possible responsive UI toolkit
 - **Zero2Neuro** - existing neural-network experiment engine
+
+These technologies are currently proposed rather than final. The group may adjust the stack as the project requirements become clearer.
 
 ## Near-Term Progress Plan
 
@@ -144,3 +178,5 @@ The final technology stack should be confirmed with the group and mentor, but a 
 ## Relationship to Zero2Neuro
 
 This repository is intended to contain the capstone group's interface work rather than duplicate the full Zero2Neuro project. The existing Zero2Neuro repository can remain the underlying neural-network system that this project integrates with.
+
+The exact integration method has not yet been finalized. Possible approaches include generating configuration files for Zero2Neuro or calling Zero2Neuro functionality from the interface's Python backend, depending on the existing project's API and the mentor's expectations.
