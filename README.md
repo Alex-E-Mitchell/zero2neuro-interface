@@ -155,15 +155,27 @@ PASS: Empty array should be invalid
 
 ## Planned Technologies
 
-The final technology stack should be confirmed with the group and mentor, but a reasonable starting direction is:
+The current proposed technology stack for the Zero2Neuro interface is:
 
-- **Python** - backend logic and Zero2Neuro integration
-- **Flask or FastAPI** - possible web backend
-- **HTML/CSS/JavaScript** - browser-based interface
-- **Bootstrap** - possible responsive UI toolkit
-- **Zero2Neuro** - existing neural-network experiment engine
+- **FastAPI** - Python-based backend and API layer that will receive requests from the frontend, handle application logic, and connect the interface to the existing Zero2Neuro system.
+- **React + TypeScript** - frontend framework and language combination for building the beginner-friendly web interface, including forms, configuration controls, validation feedback, and experiment-related views.
+- **Pydantic** - configuration validation and data modeling for checking user-provided Zero2Neuro settings before they are processed or passed to the backend.
+- **Python** - underlying language used for backend development and integration with Zero2Neuro.
+- **Zero2Neuro** - the existing deep neural network toolbox that will provide the core model configuration, training, evaluation, and experiment functionality.
 
-These technologies are currently proposed rather than final. The group may adjust the stack as the project requirements become clearer.
+At a high level, the planned architecture is:
+
+```text
+React + TypeScript Frontend
+            |
+            v
+        FastAPI Backend
+            |
+            v
+    Pydantic Validation
+            |
+            v
+       Zero2Neuro
 
 ## Near-Term Progress Plan
 
