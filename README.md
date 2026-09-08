@@ -176,6 +176,7 @@ React + TypeScript Frontend
             |
             v
        Zero2Neuro
+```
 
 ## Near-Term Progress Plan
 
