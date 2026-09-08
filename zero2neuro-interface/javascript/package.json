@@ -1,0 +1,8 @@
+{
+  "name": "zero2neuro-interface-tests",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test configGenerator.test.js"
+  }
+}
