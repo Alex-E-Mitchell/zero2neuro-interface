@@ -8,12 +8,17 @@ def validate_hidden_units(units):
 
 def generate_network_config(
     network_type,
+    input_shape,
     hidden_units,
     hidden_activation,
     output_shape,
     output_activation,
 ):
     """Generate a small Zero2Neuro-style network configuration string."""
+
+    if not isinstance(input_shape, int) or isinstance(input_shape, bool) or input_shape <= 0:
+        raise ValueError("Input shape must be a positive integer.")
+
     if not validate_hidden_units(hidden_units):
         raise ValueError("Hidden layer sizes must be positive integers.")
 
@@ -24,6 +29,8 @@ def generate_network_config(
 
     return (
         f"--network_type={network_type}\n"
+        f"--input_shape\n"
+        f"{input_shape}\n"
         f"--number_hidden_units\n"
         f"{hidden_units_text}\n"
         f"--hidden_activation={hidden_activation}\n"

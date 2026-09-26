@@ -22,6 +22,7 @@ class TestConfigGenerator(unittest.TestCase):
     def test_generate_network_config(self):
         config = generate_network_config(
             network_type="fully_connected",
+            input_shape=34,
             hidden_units=[64, 32],
             hidden_activation="elu",
             output_shape=1,
@@ -29,6 +30,7 @@ class TestConfigGenerator(unittest.TestCase):
         )
 
         self.assertIn("--network_type=fully_connected", config)
+        self.assertIn("--input_shape\n34", config)
         self.assertIn("--number_hidden_units\n64\n32", config)
         self.assertIn("--hidden_activation=elu", config)
         self.assertIn("--output_shape\n1", config)
@@ -38,7 +40,19 @@ class TestConfigGenerator(unittest.TestCase):
         with self.assertRaises(ValueError):
             generate_network_config(
                 network_type="fully_connected",
+                input_shape=34,
                 hidden_units=[64, 0],
+                hidden_activation="elu",
+                output_shape=1,
+                output_activation="elup1",
+            )
+
+    def test_generate_network_config_rejects_invalid_input_shape(self):
+        with self.assertRaises(ValueError):
+            generate_network_config(
+                network_type="fully_connected",
+                input_shape=0,
+                hidden_units=[64, 32],
                 hidden_activation="elu",
                 output_shape=1,
                 output_activation="elup1",

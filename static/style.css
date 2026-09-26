@@ -1,0 +1,111 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f5f7fa;
+    color: #222;
+}
+
+.container {
+    max-width: 850px;
+    margin: 40px auto;
+    padding: 32px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+}
+
+h1 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 2rem;
+}
+
+.subtitle {
+    margin-bottom: 30px;
+    color: #666;
+}
+
+form {
+    display: grid;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-bottom: 7px;
+    font-weight: bold;
+}
+
+input,
+select {
+    padding: 10px 12px;
+    font-size: 1rem;
+    border: 1px solid #c9ced6;
+    border-radius: 6px;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: #5b7cfa;
+    box-shadow: 0 0 0 2px rgba(91, 124, 250, 0.15);
+}
+
+button {
+    padding: 12px 18px;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: #2f5bea;
+    color: white;
+}
+
+button:hover {
+    background-color: #2449c7;
+}
+
+.error-message {
+    margin-top: 20px;
+    padding: 12px;
+    border: 1px solid #b00020;
+    background-color: #ffe9ec;
+    color: #7a0015;
+    border-radius: 6px;
+    font-weight: bold;
+}
+
+.config-output {
+    margin-top: 30px;
+    padding: 18px;
+    background-color: #f0f2f5;
+    border-radius: 8px;
+    border: 1px solid #d8dde5;
+}
+
+pre {
+    white-space: pre-wrap;
+    margin: 0;
+    font-family: Consolas, monospace;
+}
+
+.config-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.config-header h2 {
+    margin: 0;
+}
+
+#copy-button {
+    width: auto;
+    padding: 8px 14px;
+}
