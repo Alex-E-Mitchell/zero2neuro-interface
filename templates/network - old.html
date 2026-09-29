@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Zero2Neuro Configuration</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Zero2Neuro Network Configuration</h1>
+        <p class="subtitle">
+            Configure a fully connected neural network using beginner-friendly settings.
+        </p>
+
+        <form method="POST">
+
+            <div class="form-group">
+                <div class="label-row">
+                    <label for="input_shape">Input Shape</label>
+
+                    <button type="button" class="info-button" aria-label="About input shape">
+                        i
+                        <span class="tooltip">
+                            The number of input values the network receives for each example.
+                        </span>
+                    </button>
+                </div>
+
+                <input type="number" id="input_shape" name="input_shape" min="1" required>
+            </div>
+
+            <div class="form-group">
+                <div class="label-row">
+                    <label for="hidden_units">Hidden Layer Sizes</label>
+
+                    <button type="button" class="info-button" aria-label="About hidden layer sizes">
+                        i
+                        <span class="tooltip">
+                            The number of processing neurons in each hidden layer, listed in order.
+                        </span>
+                    </button>
+                </div>
+
+                <input type="text" id="hidden_units" name="hidden_units" placeholder="64, 32" required>
+            </div>
+
+            <div class="form-group">
+                <div class="label-row">
+                    <label for="hidden_activation">Hidden Activation</label>
+
+                    <button type="button" class="info-button" aria-label="About hidden activation">
+                        i
+                        <span class="tooltip">
+                            The rule used to transform values as they pass through the hidden layers.
+                        </span>
+                    </button>
+                </div>
+
+                <select id="hidden_activation" name="hidden_activation">
+                    <option value="elu">ELU</option>
+                    <option value="relu">ReLU</option>
+                    <option value="sigmoid">Sigmoid</option>
+                    <option value="tanh">Tanh</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <div class="label-row">
+                    <label for="output_shape">Output Shape</label>
+
+                    <button type="button" class="info-button" aria-label="About output shape">
+                        i
+                        <span class="tooltip">
+                            The number of values the network should produce as its final output.
+                        </span>
+                    </button>
+                </div>
+
+                <input type="number" id="output_shape" name="output_shape" min="1" required>
+            </div>
+
+            <div class="form-group">
+                <div class="label-row">
+                    <label for="output_activation">Output Activation</label>
+
+                    <button type="button" class="info-button" aria-label="About output activation">
+                        i
+                        <span class="tooltip">
+                            The rule applied to the network's final output, which helps determine what kind of values it can produce.
+                        </span>
+                    </button>
+                </div>
+
+                <select id="output_activation" name="output_activation">
+                    <option value="elup1">ELU+1</option>
+                    <option value="linear">Linear</option>
+                    <option value="sigmoid">Sigmoid</option>
+                    <option value="softmax">Softmax</option>
+                </select>
+            </div>
+
+            <button type="submit">Generate Configuration</button>
+
+        </form>
+
+        {% if error %}
+        <div class="error-message">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        {% if config %}
+        <div class="config-output">
+            <div class="config-header">
+                <h2>Generated Configuration</h2>
+                <button type="button" id="copy-button" onclick="copyConfig()">
+                    Copy
+                </button>
+            </div>
+
+            <pre id="config-text">{{ config }}</pre>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <script>
+        function copyConfig() {
+            const configText = document.getElementById("config-text").innerText;
+
+            navigator.clipboard.writeText(configText)
+                .then(() => {
+                    const button = document.getElementById("copy-button");
+                    button.textContent = "Copied!";
+
+                    setTimeout(() => {
+                        button.textContent = "Copy";
+                    }, 1500);
+                });
+        }
+    </script>
+
+</body>
+
+</html>

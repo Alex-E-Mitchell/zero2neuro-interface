@@ -3,80 +3,187 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zero2Neuro Configuration</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
-    <div class="container">
+    <div class="background-grid"></div>
 
-        <h1>Zero2Neuro Network Configuration</h1>
-        <p class="subtitle">
-            Configure a fully connected neural network using beginner-friendly settings.
-        </p>
+    <main class="container">
+
+        <header class="page-header">
+            <div class="eyebrow">MODEL CONFIGURATION // FULLY CONNECTED</div>
+
+            <div class="title-row">
+                <div>
+                    <h1>Zero2Neuro</h1>
+                    <p class="title-subline">Neural Network Configuration</p>
+                </div>
+
+                <div class="status-badge" aria-label="Configuration type">
+                    <span class="status-dot"></span>
+                    Network Config
+                </div>
+            </div>
+
+            <p class="subtitle">
+                Configure a fully connected neural network using beginner-friendly settings.
+                Hover over the <strong>i</strong> icons for a quick explanation of each field.
+            </p>
+        </header>
 
         <form method="POST">
 
-            <div class="form-group">
-                <label for="input_shape">Input Shape</label>
-                <input type="number" id="input_shape" name="input_shape" min="1" required>
-            </div>
+            <section class="config-section">
+                <div class="section-heading">
+                    <span class="section-number">01</span>
+                    <div>
+                        <h2>Input</h2>
+                        <p>Describe the information entering the network.</p>
+                    </div>
+                </div>
 
-            <div class="form-group">
-                <label for="hidden_units">Hidden Layer Sizes</label>
-                <input type="text" id="hidden_units" name="hidden_units" placeholder="64, 32" required>
-            </div>
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="input_shape">Input Shape</label>
 
-            <div class="form-group">
-                <label for="hidden_activation">Hidden Activation</label>
-                <select id="hidden_activation" name="hidden_activation">
-                    <option value="elu">ELU</option>
-                    <option value="relu">ReLU</option>
-                    <option value="sigmoid">Sigmoid</option>
-                    <option value="tanh">Tanh</option>
-                </select>
-            </div>
+                        <button type="button" class="info-button" aria-label="About input shape">
+                            i
+                            <span class="tooltip">
+                                The number of input values the network receives for each example.
+                            </span>
+                        </button>
+                    </div>
 
-            <div class="form-group">
-                <label for="output_shape">Output Shape</label>
-                <input type="number" id="output_shape" name="output_shape" min="1" required>
-            </div>
+                    <input type="number" id="input_shape" name="input_shape" min="1" placeholder="e.g. 34" required>
+                </div>
+            </section>
 
-            <div class="form-group">
-                <label for="output_activation">Output Activation</label>
-                <select id="output_activation" name="output_activation">
-                    <option value="elup1">ELU+1</option>
-                    <option value="linear">Linear</option>
-                    <option value="sigmoid">Sigmoid</option>
-                    <option value="softmax">Softmax</option>
-                </select>
-            </div>
+            <section class="config-section">
+                <div class="section-heading">
+                    <span class="section-number">02</span>
+                    <div>
+                        <h2>Hidden Layers</h2>
+                        <p>Choose how the network processes information internally.</p>
+                    </div>
+                </div>
 
-            <button type="submit">Generate Configuration</button>
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="hidden_units">Hidden Layer Sizes</label>
+
+                        <button type="button" class="info-button" aria-label="About hidden layer sizes">
+                            i
+                            <span class="tooltip">
+                                The number of processing neurons in each hidden layer, listed in order.
+                            </span>
+                        </button>
+                    </div>
+
+                    <input type="text" id="hidden_units" name="hidden_units" placeholder="64, 32" required>
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="hidden_activation">Hidden Activation</label>
+
+                        <button type="button" class="info-button" aria-label="About hidden activation">
+                            i
+                            <span class="tooltip">
+                                The rule used to transform values as they pass through the hidden layers.
+                            </span>
+                        </button>
+                    </div>
+
+                    <select id="hidden_activation" name="hidden_activation">
+                        <option value="elu">ELU</option>
+                        <option value="relu">ReLU</option>
+                        <option value="sigmoid">Sigmoid</option>
+                        <option value="tanh">Tanh</option>
+                    </select>
+                </div>
+            </section>
+
+            <section class="config-section">
+                <div class="section-heading">
+                    <span class="section-number">03</span>
+                    <div>
+                        <h2>Output</h2>
+                        <p>Define what the network should produce.</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="output_shape">Output Shape</label>
+
+                        <button type="button" class="info-button" aria-label="About output shape">
+                            i
+                            <span class="tooltip">
+                                The number of values the network should produce as its final output.
+                            </span>
+                        </button>
+                    </div>
+
+                    <input type="number" id="output_shape" name="output_shape" min="1" placeholder="e.g. 1" required>
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="output_activation">Output Activation</label>
+
+                        <button type="button" class="info-button" aria-label="About output activation">
+                            i
+                            <span class="tooltip">
+                                The rule applied to the network's final output, which helps determine what kind of values it can produce.
+                            </span>
+                        </button>
+                    </div>
+
+                    <select id="output_activation" name="output_activation">
+                        <option value="elup1">ELU+1</option>
+                        <option value="linear">Linear</option>
+                        <option value="sigmoid">Sigmoid</option>
+                        <option value="softmax">Softmax</option>
+                    </select>
+                </div>
+            </section>
+
+            <button type="submit" class="generate-button">
+                <span>Generate Configuration</span>
+                <span class="button-arrow">→</span>
+            </button>
 
         </form>
 
         {% if error %}
         <div class="error-message">
-            {{ error }}
+            <span class="message-icon">!</span>
+            <span>{{ error }}</span>
         </div>
         {% endif %}
 
         {% if config %}
         <div class="config-output">
             <div class="config-header">
-                <h2>Generated Configuration</h2>
+                <div>
+                    <div class="output-kicker">GENERATED FILE</div>
+                    <h2>network.txt</h2>
+                </div>
+
                 <button type="button" id="copy-button" onclick="copyConfig()">
-                    Copy
+                    Copy Config
                 </button>
             </div>
-        
+
             <pre id="config-text">{{ config }}</pre>
         </div>
         {% endif %}
 
-    </div>
+    </main>
 
     <script>
         function copyConfig() {
@@ -88,7 +195,7 @@
                     button.textContent = "Copied!";
 
                     setTimeout(() => {
-                        button.textContent = "Copy";
+                        button.textContent = "Copy Config";
                     }, 1500);
                 });
         }
