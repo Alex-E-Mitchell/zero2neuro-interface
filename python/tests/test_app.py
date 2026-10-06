@@ -11,7 +11,7 @@ from app import app
 class TestNetworkForm(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
-        self.fields = dict(input_shape="128, 128, 3", hidden_units="64, 32",
+        self.fields = dict(network_type="fully_connected", input_shape="128, 128, 3", hidden_units="64, 32",
                            hidden_activation="elu", output_shape="10, 20",
                            output_activation="linear")
 
@@ -59,3 +59,8 @@ class TestNetworkForm(unittest.TestCase):
         response = self.client.post("/", data=self.fields)
         self.assertEqual(response.status_code, 200)
         self.assertIn('class="error-message"', response.get_data(as_text=True))
+
+    def test_network_type_selector_present(self):
+        page = self.client.get("/").get_data(as_text=True)
+        self.assertIn('name="network_type"', page)
+        self.assertIn('value="fully_connected"', page)

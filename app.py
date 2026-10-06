@@ -28,7 +28,7 @@ def network():
             batch_normalization_input = "batch_normalization_input" in request.form
 
             config = generate_network_config(
-                network_type="fully_connected",
+                network_type=request.form.get("network_type", "fully_connected"),
                 input_shape=input_shape,
                 hidden_units=hidden_units,
                 hidden_activation=hidden_activation,
