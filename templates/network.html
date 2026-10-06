@@ -53,12 +53,12 @@
                         <button type="button" class="info-button" aria-label="About input shape">
                             i
                             <span class="tooltip">
-                                The number of input values the network receives for each example.
+                                Dimensions of each input example. Enter positive integers separated by commas, such as 34 or 128, 128, 3.
                             </span>
                         </button>
                     </div>
 
-                    <input type="number" id="input_shape" name="input_shape" min="1" placeholder="e.g. 34" required>
+                    <input type="text" id="input_shape" name="input_shape" placeholder="e.g. 34 or 128, 128, 3" required>
                 </div>
             </section>
 
@@ -78,12 +78,12 @@
                         <button type="button" class="info-button" aria-label="About hidden layer sizes">
                             i
                             <span class="tooltip">
-                                The number of processing neurons in each hidden layer, listed in order.
+                                The number of processing neurons in each hidden layer, listed in order and separated by commas. Leave blank for zero hidden layers.
                             </span>
                         </button>
                     </div>
 
-                    <input type="text" id="hidden_units" name="hidden_units" placeholder="64, 32" required>
+                    <input type="text" id="hidden_units" name="hidden_units" placeholder="64, 32 (or leave blank for zero layers)">
                 </div>
 
                 <div class="form-group">
@@ -123,12 +123,12 @@
                         <button type="button" class="info-button" aria-label="About output shape">
                             i
                             <span class="tooltip">
-                                The number of values the network should produce as its final output.
+                                Dimensions of the final output. Enter positive integers separated by commas, such as 1 or 10, 20.
                             </span>
                         </button>
                     </div>
 
-                    <input type="number" id="output_shape" name="output_shape" min="1" placeholder="e.g. 1" required>
+                    <input type="text" id="output_shape" name="output_shape" placeholder="e.g. 1 or 10, 20" required>
                 </div>
 
                 <div class="form-group">

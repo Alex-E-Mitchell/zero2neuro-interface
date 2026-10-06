@@ -42,10 +42,10 @@ A user can open the local web application, enter basic network settings, and gen
 
 The current form includes:
 
-- Input Shape
-- Hidden Layer Sizes
+- Input Shape (comma-separated positive dimensions, e.g. `34` or `128, 128, 3`)
+- Hidden Layer Sizes (comma-separated positive integers; blank means zero layers)
 - Hidden Activation
-- Output Shape
+- Output Shape (comma-separated positive dimensions, e.g. `1` or `10, 20`)
 - Output Activation
 
 For example, the following form values:
@@ -77,7 +77,7 @@ The interface also includes:
 
 - validation for invalid input values
 - visible error messages for rejected settings
-- browser-level restrictions for simple numeric fields
+- required shape fields and backend validation of comma-separated dimensions
 - a Copy button that copies only the generated configuration text
 - basic styling for a cleaner beginner-facing workflow
 
@@ -87,9 +87,8 @@ The prototype currently validates several beginner-facing settings before genera
 
 Examples include:
 
-- input shape must be a positive integer
-- output shape must be a positive integer
-- hidden-layer sizes must contain at least one value
+- input and output shapes must be non-empty lists of positive integers
+- hidden-layer sizes may be empty (zero hidden layers)
 - hidden-layer sizes must contain only positive integers
 
 Examples:
@@ -99,10 +98,49 @@ Examples:
 [128]    -> valid
 [0, 32]  -> invalid
 [-4, 32] -> invalid
-[]       -> invalid
+[]       -> valid (zero hidden layers)
 ```
 
 These checks are an early example of the larger project goal: helping users avoid invalid Zero2Neuro configurations before they reach the underlying system.
+
+For multidimensional shapes, each dimension is written on its own line:
+
+```text
+--input_shape
+128
+128
+3
+--output_shape
+10
+20
+```
+
+For zero hidden layers, the generated `--number_hidden_units` line is immediately
+followed by the next option, with no blank value lines. This explicitly supplies
+`[]` to Zero2Neuro's `nargs='*'` argument rather than relying on its `None` default.
+
+## Extensible Rules and Parser Metadata
+
+`python/config_rules.py` contains initial `fully_connected` and `cnn` architecture
+entries with required/optional argument sets. The generator uses a generic
+registry-based presence check; value validation remains separate. CNN is a
+registry prototype only; this update does not add CNN form controls or generation.
+
+The registry is based on the local Zero2Neuro checkout's `src/parser.py` and
+`src/network_builder.py` at commit `55638d7eab68e8dc1a173af15f567ba607a383d2`,
+plus the local `keras3_tools/src/cnn_tools.py`. Explicit input/output shapes are
+interface policy, since argparse supplies defaults. CNN filter, kernel, and
+pooling lists are provisional requirements based on their use by the builder;
+their lengths and conditional shape rules need mentor review. The registry covers
+a small network subset, not all upstream arguments or model-loading modes.
+
+`python/parser_metadata.py` provides `extract_argument_metadata(parser)`. Pass an
+existing `argparse.ArgumentParser`, for example the result of Zero2Neuro's
+`create_parser()`, to derive destinations, option aliases, type callables, `nargs`,
+defaults, help, choices, argparse-required status, and boolean flag information.
+Records remain Python objects, not JSON. This utility does not import Zero2Neuro
+or guess semantic string choices from help text. Parser declarations and manually
+maintained architecture constraints stay separate.
 
 ## Repository Structure
 
@@ -116,8 +154,13 @@ zero2neuro-interface/
 |
 |-- python/
 |   |-- config_generator.py
+|   |-- config_rules.py
+|   |-- parser_metadata.py
 |   `-- tests/
-|       `-- test_config_generator.py
+|       |-- test_config_generator.py
+|       |-- test_config_rules.py
+|       |-- test_parser_metadata.py
+|       `-- test_app.py
 |
 |-- templates/
 |   `-- network.html
@@ -201,7 +244,10 @@ A successful test run should end with:
 OK
 ```
 
-The tests currently cover hidden-layer validation, network-configuration generation, and rejection of invalid input values.
+The tests cover shape/hidden-layer validation, exact configuration output, Flask
+form submissions and errors, registry structure and presence checks, parser metadata,
+and generated argument round trips using a lightweight argparse fixture. They do
+not build or train neural networks.
 
 ## Current Technology Stack
 

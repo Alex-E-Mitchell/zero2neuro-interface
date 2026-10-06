@@ -1,4 +1,6 @@
 --network_type=fully_connected
+--input_shape
+34
 --number_hidden_units
 64
 32

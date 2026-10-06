@@ -5,7 +5,7 @@ from flask import Flask, render_template, request
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "python"))
 
-from config_generator import generate_network_config
+from config_generator import generate_network_config, parse_integer_list
 
 app = Flask(__name__)
 
@@ -17,13 +17,12 @@ def network():
 
     if request.method == "POST":
         try:
-            input_shape = int(request.form["input_shape"])
-            hidden_units = [
-                int(value.strip())
-                for value in request.form["hidden_units"].split(",")
-            ]
+            input_shape = parse_integer_list(request.form["input_shape"], "Input shape")
+            hidden_units = parse_integer_list(
+                request.form.get("hidden_units", ""), "Hidden layer sizes", allow_empty=True
+            )
             hidden_activation = request.form["hidden_activation"]
-            output_shape = int(request.form["output_shape"])
+            output_shape = parse_integer_list(request.form["output_shape"], "Output shape")
             output_activation = request.form["output_activation"]
 
             config = generate_network_config(

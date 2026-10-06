@@ -1,9 +1,27 @@
+from config_rules import validate_required_arguments
+
+
 def validate_hidden_units(units):
-    """Return True when units is a non-empty list of positive integers."""
-    if not isinstance(units, list) or len(units) == 0:
+    """Return True for a list of positive integers, including zero layers ([])."""
+    if not isinstance(units, list):
         return False
 
     return all(isinstance(unit, int) and not isinstance(unit, bool) and unit > 0 for unit in units)
+
+
+def validate_shape(shape):
+    """Shapes need at least one dimension; every dimension must be a positive int."""
+    return validate_hidden_units(shape) and bool(shape)
+
+
+def parse_integer_list(text, field_name, allow_empty=False):
+    """Convert a comma-separated form field without silently dropping empty items."""
+    if allow_empty and not text.strip():
+        return []
+    try:
+        return [int(value.strip()) for value in text.split(",")]
+    except ValueError:
+        raise ValueError(f"{field_name} must contain comma-separated integers.") from None
 
 
 def generate_network_config(
@@ -16,25 +34,30 @@ def generate_network_config(
 ):
     """Generate a small Zero2Neuro-style network configuration string."""
 
-    if not isinstance(input_shape, int) or isinstance(input_shape, bool) or input_shape <= 0:
-        raise ValueError("Input shape must be a positive integer.")
+    validate_required_arguments(network_type, {
+        "network_type": network_type,
+        "input_shape": input_shape,
+        "number_hidden_units": hidden_units,
+        "hidden_activation": hidden_activation,
+        "output_shape": output_shape,
+        "output_activation": output_activation,
+    })
+
+    if not validate_shape(input_shape):
+        raise ValueError("Input shape must be a non-empty list of positive integers.")
 
     if not validate_hidden_units(hidden_units):
         raise ValueError("Hidden layer sizes must be positive integers.")
 
-    if not isinstance(output_shape, int) or isinstance(output_shape, bool) or output_shape <= 0:
-        raise ValueError("Output shape must be a positive integer.")
+    if not validate_shape(output_shape):
+        raise ValueError("Output shape must be a non-empty list of positive integers.")
 
-    hidden_units_text = "\n".join(str(unit) for unit in hidden_units)
-
-    return (
-        f"--network_type={network_type}\n"
-        f"--input_shape\n"
-        f"{input_shape}\n"
-        f"--number_hidden_units\n"
-        f"{hidden_units_text}\n"
-        f"--hidden_activation={hidden_activation}\n"
-        f"--output_shape\n"
-        f"{output_shape}\n"
-        f"--output_activation={output_activation}\n"
-    )
+    # A bare hidden-units option parses as [] with nargs='*'; omitting it gives None.
+    lines = [f"--network_type={network_type}", "--input_shape"]
+    lines.extend(str(dimension) for dimension in input_shape)
+    lines.append("--number_hidden_units")
+    lines.extend(str(unit) for unit in hidden_units)
+    lines.extend([f"--hidden_activation={hidden_activation}", "--output_shape"])
+    lines.extend(str(dimension) for dimension in output_shape)
+    lines.append(f"--output_activation={output_activation}")
+    return "\n".join(lines) + "\n"
