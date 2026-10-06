@@ -31,6 +31,8 @@ def generate_network_config(
     hidden_activation,
     output_shape,
     output_activation,
+    batch_normalization=False,
+    batch_normalization_input=False,
 ):
     """Generate a small Zero2Neuro-style network configuration string."""
 
@@ -57,7 +59,16 @@ def generate_network_config(
     lines.extend(str(dimension) for dimension in input_shape)
     lines.append("--number_hidden_units")
     lines.extend(str(unit) for unit in hidden_units)
-    lines.extend([f"--hidden_activation={hidden_activation}", "--output_shape"])
+    lines.append(f"--hidden_activation={hidden_activation}")
+
+    if batch_normalization:
+        lines.append("--batch_normalization")
+
+    if batch_normalization_input:
+        lines.append("--batch_normalization_input")
+
+    lines.append("--output_shape")
     lines.extend(str(dimension) for dimension in output_shape)
     lines.append(f"--output_activation={output_activation}")
+
     return "\n".join(lines) + "\n"

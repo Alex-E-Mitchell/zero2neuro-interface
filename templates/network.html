@@ -105,6 +105,38 @@
                         <option value="tanh">Tanh</option>
                     </select>
                 </div>
+
+                <div class="form-group checkbox-group">
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="batch_normalization" name="batch_normalization">
+
+                        <label for="batch_normalization">Batch Normalization</label>
+
+                        <button type="button" class="info-button" aria-label="About batch normalization">
+                            i
+                            <span class="tooltip">
+                                Normalize values between hidden layers to help stabilize network training.
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <div class="checkbox-row">
+
+                        <input type="checkbox" id="batch_normalization_input" name="batch_normalization_input">
+
+                        <label for="batch_normalization_input">Input Batch Normalization</label>
+
+                        <button type="button" class="info-button" aria-label="About input batch normalization">
+                            i
+                            <span class="tooltip">
+                                Turn on batch normalization for input layers.
+                            </span>
+                        </button>
+
+                    </div>
+                </div>
             </section>
 
             <section class="config-section">

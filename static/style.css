@@ -241,6 +241,29 @@ select {
     cursor: pointer;
 }
 
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.checkbox-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    accent-color: var(--cyan-strong);
+    cursor: pointer;
+}
+
+.checkbox-row label {
+    cursor: pointer;
+}
+
+.checkbox-row .info-button {
+    margin-left: 2px;
+}
+
 button {
     font-family: inherit;
 }

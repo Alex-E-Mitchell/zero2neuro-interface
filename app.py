@@ -24,12 +24,16 @@ def network():
             hidden_activation = request.form["hidden_activation"]
             output_shape = parse_integer_list(request.form["output_shape"], "Output shape")
             output_activation = request.form["output_activation"]
+            batch_normalization = "batch_normalization" in request.form
+            batch_normalization_input = "batch_normalization_input" in request.form
 
             config = generate_network_config(
                 network_type="fully_connected",
                 input_shape=input_shape,
                 hidden_units=hidden_units,
                 hidden_activation=hidden_activation,
+                batch_normalization=batch_normalization,
+                batch_normalization_input=batch_normalization_input,
                 output_shape=output_shape,
                 output_activation=output_activation,
             )
