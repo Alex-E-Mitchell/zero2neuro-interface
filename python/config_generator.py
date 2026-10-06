@@ -11,6 +11,8 @@ def generate_network_config(
     input_shape,
     hidden_units,
     hidden_activation,
+    batch_normalization,
+    batch_normalization_input,
     output_shape,
     output_activation,
 ):
@@ -27,6 +29,15 @@ def generate_network_config(
 
     hidden_units_text = "\n".join(str(unit) for unit in hidden_units)
 
+    batch_normalization_text = ""
+    batch_normalization_input_text = ""
+
+    if batch_normalization:
+        batch_normalization_text = "--batch_normalization\n"
+
+    if batch_normalization_input:
+        batch_normalization_input_text = "--batch_normalization_input\n"
+
     return (
         f"--network_type={network_type}\n"
         f"--input_shape\n"
@@ -34,6 +45,8 @@ def generate_network_config(
         f"--number_hidden_units\n"
         f"{hidden_units_text}\n"
         f"--hidden_activation={hidden_activation}\n"
+        f"{batch_normalization_text}"
+        f"{batch_normalization_input_text}"
         f"--output_shape\n"
         f"{output_shape}\n"
         f"--output_activation={output_activation}\n"
