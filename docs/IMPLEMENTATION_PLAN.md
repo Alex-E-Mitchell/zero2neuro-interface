@@ -1,124 +1,115 @@
 # Implementation Plan
 
-This document outlines the current implementation plan for the Zero2Neuro Interface capstone project. The goal is to build a beginner-friendly web interface that simplifies the process of configuring and running experiments with the existing Zero2Neuro system.
+The current capstone prototype generates Zero2Neuro network configuration files
+through a local Flask web application. Preserve this small working implementation
+while adding reusable rules and parser metadata.
 
-## Phase 1 - Configuration Validation
+## Current Implementation
 
-Create reusable validation logic for beginner-facing configuration inputs before those inputs are converted into Zero2Neuro-compatible settings.
+- **Flask / Python**: `app.py` handles GET/POST requests, parses form values, calls
+  configuration generation, and renders validation errors through Jinja templates.
+- **Python validation and generation**: `python/config_generator.py` validates
+  shapes and hidden layers and emits Zero2Neuro argument-file text.
+- **HTML / CSS / JavaScript**: `templates/network.html` and `static/style.css`
+  provide the existing form, tooltips, generated config display, and Copy Config.
+- **unittest**: tests cover backend logic, Flask requests, and parser prototypes.
 
-Initial validation rules include:
+The earlier Java/JavaScript validation exercises are archived coursework, not
+the active backend. There is no React, TypeScript, FastAPI, or Pydantic dependency.
+Pydantic could support future models if there is a concrete benefit; it is not
+needed for this update.
 
-- Hidden-layer sizes must be positive integers.
-- At least one hidden layer must be provided when the selected network type requires hidden layers.
-- Invalid configuration values should be rejected before they are passed to Zero2Neuro.
+## Current Network Workflow
 
-The current prototype focuses on validating hidden-layer sizes. This behavior is implemented and tested in Python, JavaScript, and Java.
+1. Enter input/output dimensions as comma-separated positive integers.
+2. Enter comma-separated hidden-layer sizes, or leave blank for zero layers.
+3. Select hidden/output activation functions using existing dropdowns.
+4. Submit the form for Python validation and configuration generation.
+5. Review errors or copy the generated network configuration.
 
-## Phase 2 - Configuration Generation
+Shapes are non-empty lists such as `[34]`, `[128, 128, 3]`, or `[10, 20]`.
+Zero, negative, boolean, and non-integer dimensions are rejected. Hidden-layer
+lists use the same positive-integer rule but may be empty. Each list element is
+written on its own value line. A bare `--number_hidden_units` option explicitly
+represents zero layers with no blank values.
 
-Translate validated user selections into configuration data that can be used by Zero2Neuro.
+## Intended Extensible Architecture
 
-Potential user-configurable options include:
+```text
+Zero2Neuro src/parser.py
+    -> argument metadata (types, nargs, defaults, help, choices, flags)
 
-- network type
-- hidden-layer sizes
-- activation functions
-- output size
-- output activation
-- training parameters
-- dataset-related options
+plus
 
-The first configuration-generation work will focus on network settings before expanding into data and experiment configuration.
+data-driven constraint / architecture registries
+    -> required / optional relationships and semantic constraints
 
-## Phase 3 - Web Interface Prototype
+then
 
-Create a beginner-friendly browser interface using React and TypeScript.
+generic validation / config generation
+    -> Flask web interface
+```
 
-The initial interface should include:
+`python/parser_metadata.py` inspects a supplied `argparse.ArgumentParser` and
+returns one record per action, preserving aliases and actions with shared
+destinations. It does not import Zero2Neuro, parse help text into choices, or
+infer architecture constraints. Returned type callables/defaults remain Python
+objects. The prototype isolates argparse's private action enumeration so future
+compatibility changes have one place to be handled.
 
-- form controls for common Zero2Neuro settings
-- dropdown menus for selectable options
-- numeric input fields for values such as hidden-layer sizes
-- validation feedback for incorrect or unsupported values
-- brief explanations or tooltips for technical concepts
-- a clear workflow that guides users through experiment configuration
+`python/config_rules.py` holds initial `fully_connected` and `cnn` required and
+optional sets. A generic presence checker is already used by the current
+generator. The registry stores option names; metadata preserves actual argparse
+destinations. A future integration must reconcile aliases, notably `input_shape`
+to `input_shape0` and `output_shape` to `output_shape0`.
 
-The interface should reduce the need for users to understand Zero2Neuro's underlying configuration-file syntax.
+Parser metadata extraction remains a separate reusable prototype, rather than a
+runtime dependency of the form. Future work can combine it with field validators
+and constraint registries to reduce duplicated metadata. Positivity, supported
+string values absent from argparse choices, and architecture relationships still
+need explicit semantic rules; `nargs` alone cannot establish them.
 
-## Phase 4 - Backend and API Integration
+## Source Evidence and Assumptions
 
-Use FastAPI as the backend and API layer for communication between the frontend and the Zero2Neuro-related application logic.
+Inspected local Zero2Neuro `src/parser.py` and `src/network_builder.py` at commit
+`55638d7eab68e8dc1a173af15f567ba607a383d2`, its network documentation and CNN
+example, and local `keras3_tools/src/cnn_tools.py`.
 
-The backend will be responsible for:
+- Shapes use `nargs='+'`; hidden units use `nargs='*'` and default to `None`.
+- Requiring explicit input/output sizes is interface policy, since the upstream
+  parser supplies `[10]` defaults. Activation options retain upstream defaults.
+- CNN filter, kernel, and pooling lists are provisionally required for new model
+  construction: the parser defaults them to `None`, the network builder passes
+  them explicitly, and the CNN stack calls `len`/`zip` on them. A pooling entry of
+  zero can disable pooling. The initial registry does not claim to cover every
+  upstream option or pretrained-model path.
+- CNN dimensionality and list-length relationships need mentor confirmation.
+  They are documented here rather than implemented as speculative validation.
 
-- receiving configuration data from the React frontend
-- validating and modeling request data
-- preparing configuration data for Zero2Neuro
-- returning useful validation errors or results to the frontend
-- eventually initiating or coordinating Zero2Neuro experiments
+The fully connected UI remains the only supported form workflow. A CNN call to
+the existing generator cannot supply the extra required CNN fields and is
+rejected by the generic presence check.
 
-Pydantic will be used with FastAPI to define configuration models and validate user-provided values.
+## Testing and Near-Term Decisions
 
-## Phase 5 - Zero2Neuro Integration
+Run the full active Python suite with:
 
-Connect the interface workflow to the existing Zero2Neuro system.
+```powershell
+python -m unittest discover -s python/tests -v
+```
 
-The exact integration method will depend on the existing Zero2Neuro codebase and mentor guidance. Possible approaches include:
+Verify one-/multidimensional shapes, invalid dimensions, empty/invalid hidden
+layers, exact generated text, form validation/errors, registry structure, and
+parser metadata including flags and aliases. A lightweight argparse fixture
+checks generated-text round trips without requiring TensorFlow or Keras.
 
-1. generating the configuration files expected by Zero2Neuro and invoking its existing experiment workflow
-2. importing and calling Zero2Neuro functionality directly from the Python backend if the available API supports the required operations
+Before integrating metadata into production validation, agree on the supported
+Zero2Neuro version, canonical argument names, semantic string choices, and CNN
+requirements. Model building/training compatibility is a later integration check.
 
-The interface project should remain separate from the core Zero2Neuro implementation where practical, while using Zero2Neuro as the underlying neural-network experiment engine.
+## Later Work (Outside This Update)
 
-## Phase 6 - Experiment Results and User Feedback
-
-After basic experiment execution is connected, expand the interface so users can understand what happened after running an experiment.
-
-Possible features include:
-
-- displaying whether an experiment completed successfully
-- presenting important training and evaluation results
-- linking or integrating available experiment reporting tools
-- showing clear error messages when configuration or execution fails
-- providing beginner-oriented explanations of important outputs
-
-The exact result-viewing features will depend on how Zero2Neuro exposes experiment results.
-
-## Phase 7 - Testing and Refinement
-
-Test the project at multiple levels as development progresses.
-
-Testing should include:
-
-- invalid user inputs
-- valid configuration inputs
-- configuration generation
-- frontend validation behavior
-- backend API requests and responses
-- Pydantic validation
-- compatibility with Zero2Neuro
-- error handling
-- usability of the beginner-facing workflow
-
-The group will refine the interface based on testing, mentor feedback, peer review, and observed usability issues.
-
-## Current Proposed Technology Stack
-
-- **React + TypeScript** - beginner-facing frontend interface
-- **FastAPI** - Python backend and API layer
-- **Pydantic** - data modeling and validation
-- **Python** - backend development and Zero2Neuro integration
-- **Zero2Neuro** - existing neural-network experiment system
-
-## Current Development Priority
-
-The immediate priority is to establish the smallest working path from a beginner-friendly input to a valid Zero2Neuro configuration.
-
-The initial development sequence is:
-
-1. validate user input
-2. generate compatible configuration data
-3. expose the configuration workflow through a web interface
-4. connect the frontend to the FastAPI backend
-5. integrate the backend with Zero2Neuro
-6. test and refine the complete workflow
+CNN controls, Data and Experiment configuration, complete file exports, and
+direct experiment execution can be planned after this foundation is reviewed.
+U-Net, RNN, and scikit-learn workflows remain later extensions. No framework
+migration or frontend redesign is planned as part of this work.
