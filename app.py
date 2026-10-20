@@ -26,6 +26,18 @@ def network():
             output_activation = request.form["output_activation"]
             batch_normalization = "batch_normalization" in request.form
             batch_normalization_input = "batch_normalization_input" in request.form
+            optional_values = {}
+            for name, label, expected in (
+                ("dropout", "Dropout", "a number greater than or equal to 0 and less than 1"),
+                ("dropout_input", "Input dropout", "a number greater than or equal to 0 and less than 1"),
+                ("L1_regularization", "L1 regularization", "a non-negative number"),
+                ("L2_regularization", "L2 regularization", "a non-negative number"),
+            ):
+                text = request.form.get(name, "").strip()
+                try:
+                    optional_values[name] = float(text) if text else None
+                except ValueError:
+                    raise ValueError(f"{label} must be {expected}.") from None
 
             config = generate_network_config(
                 network_type=request.form.get("network_type", "fully_connected"),
@@ -34,6 +46,7 @@ def network():
                 hidden_activation=hidden_activation,
                 batch_normalization=batch_normalization,
                 batch_normalization_input=batch_normalization_input,
+                **optional_values,
                 output_shape=output_shape,
                 output_activation=output_activation,
             )

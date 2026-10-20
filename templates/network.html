@@ -69,12 +69,12 @@
                         <button type="button" class="info-button" aria-label="About input shape">
                             i
                             <span class="tooltip">
-                                Dimensions of each input example. Enter positive integers separated by commas, such as 34 or 128, 128, 3.
+                                Number of input features in each example. For Fully Connected networks, enter exactly one positive integer, such as 34.
                             </span>
                         </button>
                     </div>
 
-                    <input type="text" id="input_shape" name="input_shape" placeholder="e.g. 34 or 128, 128, 3" required>
+                    <input type="text" id="input_shape" name="input_shape" placeholder="e.g. 34" required>
                 </div>
             </section>
 
@@ -120,6 +120,72 @@
                         <option value="sigmoid">Sigmoid</option>
                         <option value="tanh">Tanh</option>
                     </select>
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="dropout">Dropout Rate (optional)</label>
+                        <button type="button" class="info-button" aria-label="About dropout">
+                            i
+                            <span class="tooltip">
+                                Fraction of neurons temporarily turned off after each hidden layer during training.
+                                For example, 0.2 means 20%. Enter a value greater than or equal to 0 and less than 1; 0 turns dropout off.
+                                Leave blank to use Zero2Neuro's default (no dropout).
+                            </span>
+                        </button>
+                    </div>
+                    <input type="number" id="dropout" name="dropout" min="0" max="0.9999999999999999" step="any"
+                           placeholder="e.g. 0.2 (20%)" value="{{ request.form.get('dropout', '') }}">
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="dropout_input">Input Dropout Rate (optional)</label>
+                        <button type="button" class="info-button" aria-label="About input dropout">
+                            i
+                            <span class="tooltip">
+                                Fraction of input features temporarily turned off before the hidden layers during training.
+                                For example, 0.2 means 20%. Enter a value greater than or equal to 0 and less than 1; 0 turns input dropout off.
+                                Leave blank to use Zero2Neuro's default (no input dropout).
+                            </span>
+                        </button>
+                    </div>
+                    <input type="number" id="dropout_input" name="dropout_input" min="0" max="0.9999999999999999" step="any"
+                           placeholder="e.g. 0.2 (20%)" value="{{ request.form.get('dropout_input', '') }}">
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="L1_regularization">L1 Regularization Strength (optional)</label>
+                        <button type="button" class="info-button" aria-label="About L1 regularization">
+                            i
+                            <span class="tooltip">
+                                Adds a penalty for large weights in hidden and output layers, encouraging some weights to become zero.
+                                Enter a non-negative strength, such as 0.001. Larger values mean a stronger penalty.
+                                Enter 0 for no L1 penalty, or leave blank to use Zero2Neuro's default (no L1 regularization).
+                                Use L1 or L2, not both, with the installed Zero2Neuro/Keras version; leave the other field blank.
+                            </span>
+                        </button>
+                    </div>
+                    <input type="number" id="L1_regularization" name="L1_regularization" min="0" step="any"
+                           placeholder="e.g. 0.001" value="{{ request.form.get('L1_regularization', '') }}">
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="L2_regularization">L2 Regularization Strength (optional)</label>
+                        <button type="button" class="info-button" aria-label="About L2 regularization">
+                            i
+                            <span class="tooltip">
+                                Adds a penalty for squared weights in hidden and output layers, encouraging smaller weights.
+                                Enter a non-negative strength, such as 0.001. Larger values mean a stronger penalty.
+                                Enter 0 for no L2 penalty, or leave blank to use Zero2Neuro's default (no L2 regularization).
+                                Use L1 or L2, not both, with the installed Zero2Neuro/Keras version; leave the other field blank.
+                            </span>
+                        </button>
+                    </div>
+                    <input type="number" id="L2_regularization" name="L2_regularization" min="0" step="any"
+                           placeholder="e.g. 0.001" value="{{ request.form.get('L2_regularization', '') }}">
                 </div>
 
                 <div class="form-group checkbox-group">
