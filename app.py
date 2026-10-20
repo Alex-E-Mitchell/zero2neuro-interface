@@ -23,7 +23,18 @@ def network():
     )
     selected_network_type = values["network_type"]
 
-    if request.method == "POST":
+    if (
+        request.method == "POST"
+        and selected_network_type == "cnn"
+        and len(request.form.getlist("network_type")) == 1
+    ):
+        errors.clear()
+        error = (
+            "CNN configuration is under development. "
+            "No configuration was generated. "
+            "Choose Fully Connected to generate a configuration now."
+        )
+    elif request.method == "POST":
         if (
             len(request.form.getlist("network_type")) > 1
             or selected_network_type not in NETWORK_ARCHITECTURES
