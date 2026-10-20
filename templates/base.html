@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Zero2Neuro Configuration{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <a class="skip-link" href="#page-content">Skip to content</a>
+    <div class="background-grid" aria-hidden="true"></div>
+    <main class="container">
+        <header class="page-header">
+            <div class="eyebrow">NEURAL NETWORK CONFIGURATION</div>
+            <div class="title-row">
+                <div>
+                    <h1>Zero2Neuro</h1>
+                    <p class="title-subline">Build your experiment configuration</p>
+                </div>
+            </div>
+        </header>
+        <nav class="page-navigation" aria-label="Configuration pages">
+            {% for endpoint, label in [('network', 'Network'), ('data', 'Data'), ('experiment', 'Experiment')] %}
+            <a href="{{ url_for(endpoint) }}"{% if request.endpoint == endpoint %} aria-current="page"{% endif %}>
+                {{ label }}{% if endpoint != 'network' %}<span class="nav-status">In progress</span>{% endif %}
+            </a>
+            {% endfor %}
+        </nav>
+        <section id="page-content" tabindex="-1" aria-labelledby="page-heading">
+            <div class="content-heading">
+                <h2 id="page-heading">{% block heading %}{% endblock %}</h2>
+                <p class="subtitle">{% block description %}{% endblock %}</p>
+            </div>
+            {% block content %}{% endblock %}
+        </section>
+    </main>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

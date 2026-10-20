@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ page_name }} Configuration | Zero2Neuro{% endblock %}
+{% block heading %}{{ page_name }} Configuration{% endblock %}
+{% block description %}This configuration page is in progress.{% endblock %}
+{% block content %}
+<div class="config-section">
+    <h3>Coming soon</h3>
+    <p>{{ planned_features }}</p>
+    <p>This page does not collect settings or generate configuration text yet.</p>
+    <a class="return-link" href="{{ url_for('network') }}">Go to Network configuration</a>
+</div>
+{% endblock %}

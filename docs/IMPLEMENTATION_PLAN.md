@@ -113,3 +113,21 @@ CNN controls, Data and Experiment configuration, complete file exports, and
 direct experiment execution can be planned after this foundation is reviewed.
 U-Net, RNN, and scikit-learn workflows remain later extensions. No framework
 migration or frontend redesign is planned as part of this work.
+
+### Shared page layout (Phase 1)
+
+`templates/base.html` provides the common header, responsive navigation, and
+keyboard skip link. Pages extend it using the `title`, `heading`, `description`,
+`content`, and optional `scripts` blocks. The existing Network form remains at
+`/`; `/data` and `/experiment` are explicitly labeled placeholders.
+
+When the Data and Experiment forms are ready, their owners can replace the
+corresponding route's placeholder rendering with a template extending
+`base.html`, add POST handling and validation, and remove that page's
+“In progress” label in the navigation. The Review page remains Phase 2 work.
+Navigation does not currently save drafts when users move between pages.
+
+Run `python -m unittest discover -s python/tests -v` to check the existing
+configuration behavior and shared navigation. Navigation coverage verifies all
+page links, the active-page indicator, placeholder behavior, and navigation
+remaining present after Network configuration generation.

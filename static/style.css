@@ -497,3 +497,52 @@ pre {
         transform: none;
     }
 }
+
+/* Shared configuration page layout. */
+.page-navigation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 28px;
+}
+.page-navigation a {
+    flex: 1 1 150px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--border-bright);
+    border-radius: 9px;
+    color: var(--text);
+    text-decoration: none;
+}
+.page-navigation a:hover,
+.page-navigation a[aria-current="page"] {
+    background: rgba(89, 217, 255, 0.12);
+    border-color: var(--cyan);
+}
+.nav-status {
+    color: var(--muted);
+    font-size: 0.75rem;
+}
+.content-heading { margin-bottom: 24px; }
+.content-heading h2 { margin: 0; }
+.content-heading .subtitle { margin-top: 10px; }
+.return-link { color: var(--cyan); }
+.config-section p { line-height: 1.6; }
+.skip-link {
+    position: absolute;
+    top: -100px;
+    left: 20px;
+    z-index: 100;
+    background: var(--field);
+    color: var(--text);
+    padding: 12px;
+}
+.skip-link:focus { top: 8px; }
+a:focus-visible, button:focus-visible {
+    outline: 3px solid var(--cyan);
+    outline-offset: 4px;
+}
