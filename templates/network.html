@@ -28,6 +28,12 @@
                     {{ field_error("network_type", errors) }}
                 </div>
             </section>
+            <section class="config-section" id="cnn-status" role="status"{% if selected_network_type != 'cnn' %} hidden{% endif %}>
+                <h2>CNN Configuration Preview</h2>
+                <p>CNN configuration generation and validation are under development. You can explore the form,
+                    but CNN configurations cannot be generated yet. Choose Fully Connected to generate a configuration now.</p>
+            </section>
+
             <section class="config-section">
                 <div class="section-heading">
                     <span class="section-number">01</span>
@@ -44,7 +50,9 @@
                         <button type="button" class="info-button" aria-label="About input shape">
                             i
                             <span class="tooltip">
-                                Dimensions of each input example. Enter positive integers separated by commas, such as 34 or 128, 128, 3.
+                                Dimensions of each input example.
+                                <span id="fc-input-help"{% if selected_network_type != 'fully_connected' %} hidden{% endif %}>For Fully Connected networks, enter exactly one positive integer, such as 34.</span>
+                                <span id="cnn-input-help"{% if selected_network_type != 'cnn' %} hidden{% endif %}>For CNNs, include spatial dimensions followed by channels: 100, 2 for a sequence with two features, or 128, 128, 3 for an RGB image. Do not include the batch size.</span>
                             </span>
                         </button>
                     </div>
@@ -54,11 +62,84 @@
                 </div>
             </section>
 
-            <section class="config-section">
+            {# Hidden CNN draft controls stay enabled so FC POSTs retain their values; the backend ignores them. #}
+            <fieldset class="config-section" id="cnn-fields"{% if selected_network_type != 'cnn' %} hidden{% endif %}>
+                <legend>CNN Convolution Layers</legend>
+                <p>Each position in the lists describes the same layer. For two layers, try filters 8, 16;
+                    kernel sizes 3, 3; and max-pooling sizes 0, 2. These settings are a draft and are not validated yet.</p>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="conv_number_filters">Filters per Layer</label>
+                        <button type="button" class="info-button" aria-label="About convolution filters">
+                            i
+                            <span class="tooltip">Number of patterns each convolution layer learns. Enter one positive integer per layer, separated by commas, such as 8, 16.</span>
+                        </button>
+                    </div>
+                    <input type="text" id="conv_number_filters" name="conv_number_filters" placeholder="e.g. 8, 16"
+                           value="{{ request.form.get('conv_number_filters', '') }}">
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="conv_kernel_size">Kernel Sizes per Layer</label>
+                        <button type="button" class="info-button" aria-label="About convolution kernel sizes">
+                            i
+                            <span class="tooltip">Size of the neighborhood searched for patterns. Enter one positive integer per layer, such as 3, 3. For images, 3 means a 3 by 3 square; it does not mean three separate layers.</span>
+                        </button>
+                    </div>
+                    <input type="text" id="conv_kernel_size" name="conv_kernel_size" placeholder="e.g. 3, 3"
+                           value="{{ request.form.get('conv_kernel_size', '') }}">
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="conv_pool_size">Max-Pooling Sizes per Layer</label>
+                        <button type="button" class="info-button" aria-label="About convolution max pooling">
+                            i
+                            <span class="tooltip">Pooling reduces spatial size by keeping the largest nearby values. Enter one integer per layer, such as 0, 2: 0 skips pooling, while 2 uses a 2 by 2 region for images. Pooling happens after convolution.</span>
+                        </button>
+                    </div>
+                    <input type="text" id="conv_pool_size" name="conv_pool_size" placeholder="e.g. 0, 2"
+                           value="{{ request.form.get('conv_pool_size', '') }}">
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="conv_padding">Convolution Padding</label>
+                        <button type="button" class="info-button" aria-label="About convolution padding">
+                            i
+                            <span class="tooltip">Valid adds no border and usually reduces spatial size. Same adds border zeros to preserve spatial size when convolution stride is 1. This setting also applies to pooling; pooling can still reduce size.</span>
+                        </button>
+                    </div>
+                    <select id="conv_padding" name="conv_padding">
+                        <option value="valid"{% if request.form.get('conv_padding', 'valid') == 'valid' %} selected{% endif %}>Valid (no added border)</option>
+                        <option value="same"{% if request.form.get('conv_padding') == 'same' %} selected{% endif %}>Same (add border zeros)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="conv_activation">Convolution Activation</label>
+                        <button type="button" class="info-button" aria-label="About convolution activation">
+                            i
+                            <span class="tooltip">Rule applied to the patterns learned by every convolution layer. ELU is Zero2Neuro's default. These are suggested beginner choices.</span>
+                        </button>
+                    </div>
+                    <select id="conv_activation" name="conv_activation">
+                        <option value="elu"{% if request.form.get('conv_activation', 'elu') == 'elu' %} selected{% endif %}>ELU</option>
+                        <option value="relu"{% if request.form.get('conv_activation') == 'relu' %} selected{% endif %}>ReLU</option>
+                        <option value="sigmoid"{% if request.form.get('conv_activation') == 'sigmoid' %} selected{% endif %}>Sigmoid</option>
+                        <option value="tanh"{% if request.form.get('conv_activation') == 'tanh' %} selected{% endif %}>Tanh</option>
+                    </select>
+                </div>
+            </fieldset>
+
+            <fieldset class="config-section" id="fully-connected-fields"{% if selected_network_type != 'fully_connected' %} hidden disabled{% endif %}>
                 <div class="section-heading">
                     <span class="section-number">02</span>
                     <div>
-                        <h2>Hidden Layers</h2>
+                        <h2>Fully Connected Settings</h2>
                         <p>Choose how the network processes information internally.</p>
                     </div>
                 </div>
@@ -102,6 +183,72 @@
                     {{ field_error("hidden_activation", errors) }}
                 </div>
 
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="dropout">Dropout Rate (optional)</label>
+                        <button type="button" class="info-button" aria-label="About dropout">
+                            i
+                            <span class="tooltip">
+                                Fraction of neurons temporarily turned off after each hidden layer during training.
+                                For example, 0.2 means 20%. Enter a value greater than or equal to 0 and less than 1; 0 turns dropout off.
+                                Leave blank to use Zero2Neuro's default (no dropout).
+                            </span>
+                        </button>
+                    </div>
+                    <input type="number" id="dropout" name="dropout" min="0" max="0.9999999999999999" step="any"
+                           placeholder="e.g. 0.2 (20%)" value="{{ request.form.get('dropout', '') }}">
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="dropout_input">Input Dropout Rate (optional)</label>
+                        <button type="button" class="info-button" aria-label="About input dropout">
+                            i
+                            <span class="tooltip">
+                                Fraction of input features temporarily turned off before the hidden layers during training.
+                                For example, 0.2 means 20%. Enter a value greater than or equal to 0 and less than 1; 0 turns input dropout off.
+                                Leave blank to use Zero2Neuro's default (no input dropout).
+                            </span>
+                        </button>
+                    </div>
+                    <input type="number" id="dropout_input" name="dropout_input" min="0" max="0.9999999999999999" step="any"
+                           placeholder="e.g. 0.2 (20%)" value="{{ request.form.get('dropout_input', '') }}">
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="L1_regularization">L1 Regularization Strength (optional)</label>
+                        <button type="button" class="info-button" aria-label="About L1 regularization">
+                            i
+                            <span class="tooltip">
+                                Adds a penalty for large weights in hidden and output layers, encouraging some weights to become zero.
+                                Enter a non-negative strength, such as 0.001. Larger values mean a stronger penalty.
+                                Enter 0 for no L1 penalty, or leave blank to use Zero2Neuro's default (no L1 regularization).
+                                Use L1 or L2, not both, with the installed Zero2Neuro/Keras version; leave the other field blank.
+                            </span>
+                        </button>
+                    </div>
+                    <input type="number" id="L1_regularization" name="L1_regularization" min="0" step="any"
+                           placeholder="e.g. 0.001" value="{{ request.form.get('L1_regularization', '') }}">
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="L2_regularization">L2 Regularization Strength (optional)</label>
+                        <button type="button" class="info-button" aria-label="About L2 regularization">
+                            i
+                            <span class="tooltip">
+                                Adds a penalty for squared weights in hidden and output layers, encouraging smaller weights.
+                                Enter a non-negative strength, such as 0.001. Larger values mean a stronger penalty.
+                                Enter 0 for no L2 penalty, or leave blank to use Zero2Neuro's default (no L2 regularization).
+                                Use L1 or L2, not both, with the installed Zero2Neuro/Keras version; leave the other field blank.
+                            </span>
+                        </button>
+                    </div>
+                    <input type="number" id="L2_regularization" name="L2_regularization" min="0" step="any"
+                           placeholder="e.g. 0.001" value="{{ request.form.get('L2_regularization', '') }}">
+                </div>
+
                 <div class="form-group checkbox-group">
                     <div class="checkbox-row">
                         <input type="checkbox" id="batch_normalization" name="batch_normalization"{% if values.batch_normalization %} checked{% endif %}>
@@ -133,7 +280,7 @@
 
                     </div>
                 </div>
-            </section>
+            </fieldset>
 
             <section class="config-section">
                 <div class="section-heading">
@@ -184,7 +331,7 @@
                 </div>
             </section>
 
-            <button type="submit" class="generate-button">
+            <button type="submit" class="generate-button" id="generate-button"{% if selected_network_type == 'cnn' %} disabled{% endif %}>
                 <span>Generate Configuration</span>
                 <span class="button-arrow">→</span>
             </button>
@@ -193,7 +340,7 @@
 
 
         {% if config %}
-        <div class="config-output">
+        <div class="config-output" id="generated-config">
             <div class="config-header">
                 <div>
                     <div class="output-kicker">GENERATED FILE</div>
@@ -211,6 +358,8 @@
 
 {% endblock %}
 {% block scripts %}
+<script src="{{ url_for('static', filename='network_selector.js') }}"></script>
+<script src="{{ url_for('static', filename='dropout_validation.js') }}"></script>
     <script>
         const errorSummary = document.getElementById("form-errors");
         if (errorSummary) errorSummary.focus();
