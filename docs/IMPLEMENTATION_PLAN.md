@@ -131,3 +131,27 @@ Run `python -m unittest discover -s python/tests -v` to check the existing
 configuration behavior and shared navigation. Navigation coverage verifies all
 page links, the active-page indicator, placeholder behavior, and navigation
 remaining present after Network configuration generation.
+
+### Form feedback and retained entries (Phase 1)
+
+The Network form keeps submitted text, dropdown selections, and checkbox states
+when it displays generated configuration or validation feedback. This applies to
+the submission response only: refreshing with a new GET or navigating away does
+not save a draft, and no entries are stored on the server between requests.
+
+`python/network_form.py` prepares display values separately from parsed generator
+arguments. It reuses existing integer validation and defines the current form's
+supported dropdown choices in one place for rendering and submission checks.
+These choices are not a complete list of Zero2Neuro's options. Add choices here
+as the Network form gains support for them.
+
+`templates/form_feedback.html` provides reusable error-summary and field-error
+macros for the other configuration pages. Pass errors keyed by each control's
+HTML ID; use `error_attributes` on the control and `field_error` below it. The
+summary links to affected controls, and the Network page focuses it after an
+invalid submission. The form uses server validation for consistent feedback
+on all invalid fields together; required attributes remain for accessibility.
+
+Form feedback tests cover retained entries on success and failure, multiple
+errors, missing fields, unsupported dropdown values, corrections, escaped text,
+and fresh visits. Generated configuration still passes the original tests.

@@ -5,7 +5,8 @@ from flask import Flask, render_template, request
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "python"))
 
-from config_generator import generate_network_config, parse_integer_list
+from config_generator import generate_network_config
+from network_form import SELECT_FIELDS, prepare_network_form
 
 app = Flask(__name__)
 
@@ -14,37 +15,23 @@ app = Flask(__name__)
 def network():
     config = None
     error = None
+    values, arguments, errors = prepare_network_form(
+        request.form if request.method == "POST" else None
+    )
 
-    if request.method == "POST":
+    if request.method == "POST" and not errors:
         try:
-            input_shape = parse_integer_list(request.form["input_shape"], "Input shape")
-            hidden_units = parse_integer_list(
-                request.form.get("hidden_units", ""), "Hidden layer sizes", allow_empty=True
-            )
-            hidden_activation = request.form["hidden_activation"]
-            output_shape = parse_integer_list(request.form["output_shape"], "Output shape")
-            output_activation = request.form["output_activation"]
-            batch_normalization = "batch_normalization" in request.form
-            batch_normalization_input = "batch_normalization_input" in request.form
-
-            config = generate_network_config(
-                network_type=request.form.get("network_type", "fully_connected"),
-                input_shape=input_shape,
-                hidden_units=hidden_units,
-                hidden_activation=hidden_activation,
-                batch_normalization=batch_normalization,
-                batch_normalization_input=batch_normalization_input,
-                output_shape=output_shape,
-                output_activation=output_activation,
-            )
-
-        except (ValueError, KeyError) as exc:
+            config = generate_network_config(**arguments)
+        except ValueError as exc:
             error = str(exc)
 
     return render_template(
         "network.html",
         config=config,
         error=error,
+        errors=errors,
+        values=values,
+        select_fields=SELECT_FIELDS,
     )
 
 
