@@ -28,7 +28,7 @@ function page(initialType, includeResult = true) {
     elements["fully-connected-fields"].children = [hiddenUnits, normalization];
     if (includeResult) {
         elements["generated-config"] = { hidden: false };
-        elements["server-error"] = { hidden: false };
+        elements["form-errors"] = { hidden: false };    
     }
     let change;
     elements.network_type.addEventListener = (event, callback) => {
@@ -66,7 +66,7 @@ test("switch FC to CNN and back, preserving values and hiding stale output", () 
     view.select("cnn");
     assertMode(view.elements, false);
     assert.equal(view.elements["generated-config"].hidden, true);
-    assert.equal(view.elements["server-error"].hidden, true);
+    assert.equal(view.elements["form-errors"].hidden, true);    
     view.select("fully_connected");
     assertMode(view.elements, true);
     assert.equal(view.elements.input_shape.value, "34");

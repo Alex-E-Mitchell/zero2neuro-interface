@@ -1,3 +1,4 @@
+import math
 import sys
 from pathlib import Path
 
@@ -5,8 +6,9 @@ from flask import Flask, render_template, request
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "python"))
 
-from config_generator import generate_network_config, parse_integer_list
+from config_generator import generate_network_config
 from config_rules import NETWORK_ARCHITECTURES
+from network_form import SELECT_FIELDS, prepare_network_form
 from data_page import register_data_page
 
 app = Flask(__name__)
@@ -17,61 +19,88 @@ register_data_page(app)
 def network():
     config = None
     error = None
-    selected_network_type = "fully_connected"
 
-    if request.method == "POST":
-        try:
-            network_type = request.form.get("network_type", "fully_connected")
-            if len(request.form.getlist("network_type")) > 1 or network_type not in NETWORK_ARCHITECTURES:
-                raise ValueError("Unknown network type. Please choose Fully Connected or CNN.")
-            selected_network_type = network_type
-            if network_type == "cnn":
-                raise ValueError(
-                    "CNN configuration is under development. No configuration was generated. "
+    values, arguments, errors = prepare_network_form(
+        request.form if request.method == "POST" else None
+    )
+    selected_network_type = values["network_type"]
+
+    if (
+        request.method == "POST"
+        and selected_network_type == "cnn"
+        and len(request.form.getlist("network_type")) == 1
+    ):
+        errors.clear()
+        error = (
+            "CNN configuration is under development. "
+            "No configuration was generated. "
+            "Choose Fully Connected to generate a configuration now."
+        )
+    elif request.method == "POST":
+        if (
+            len(request.form.getlist("network_type")) > 1
+            or selected_network_type not in NETWORK_ARCHITECTURES
+        ):
+            errors["network_type"] = "Unknown network type. Please choose Fully Connected or CNN."
+            
+        optional_values = {}
+
+        for name in (
+            "dropout",
+            "dropout_input",
+            "L1_regularization",
+            "L2_regularization",
+        ):
+            raw = request.form.get(name, "").strip()
+
+            if not raw:
+                optional_values[name] = None
+                continue
+
+            try:
+                value = float(raw)
+            except ValueError:
+                errors[name] = "Enter a valid number."
+                continue
+
+            if (
+                not math.isfinite(value)
+                or value < 0
+                or (name in ("dropout", "dropout_input") and value >= 1)
+            ):
+                if name in ("dropout", "dropout_input"):
+                    errors[name] = (
+                        "Enter a finite number greater than or equal "
+                        "to 0 and less than 1."
+                    )
+                else:
+                    errors[name] = "Enter a finite, non-negative number."
+            else:
+                optional_values[name] = value
+
+        if not errors:
+            if selected_network_type == "cnn":
+                error = (
+                    "CNN configuration is under development. "
+                    "No configuration was generated. "
                     "Choose Fully Connected to generate a configuration now."
                 )
-
-            input_shape = parse_integer_list(request.form["input_shape"], "Input shape")
-            hidden_units = parse_integer_list(
-                request.form.get("hidden_units", ""), "Hidden layer sizes", allow_empty=True
-            )
-            hidden_activation = request.form["hidden_activation"]
-            output_shape = parse_integer_list(request.form["output_shape"], "Output shape")
-            output_activation = request.form["output_activation"]
-            batch_normalization = "batch_normalization" in request.form
-            batch_normalization_input = "batch_normalization_input" in request.form
-            optional_values = {}
-            for name, label, expected in (
-                ("dropout", "Dropout", "a number greater than or equal to 0 and less than 1"),
-                ("dropout_input", "Input dropout", "a number greater than or equal to 0 and less than 1"),
-                ("L1_regularization", "L1 regularization", "a non-negative number"),
-                ("L2_regularization", "L2 regularization", "a non-negative number"),
-            ):
-                text = request.form.get(name, "").strip()
+            else:
                 try:
-                    optional_values[name] = float(text) if text else None
-                except ValueError:
-                    raise ValueError(f"{label} must be {expected}.") from None
-
-            config = generate_network_config(
-                network_type=network_type,
-                input_shape=input_shape,
-                hidden_units=hidden_units,
-                hidden_activation=hidden_activation,
-                batch_normalization=batch_normalization,
-                batch_normalization_input=batch_normalization_input,
-                **optional_values,
-                output_shape=output_shape,
-                output_activation=output_activation,
-            )
-
-        except (ValueError, KeyError) as exc:
-            error = str(exc)
+                    config = generate_network_config(
+                        **arguments,
+                        **optional_values,
+                    )
+                except (ValueError, KeyError) as exc:
+                    error = str(exc)
 
     return render_template(
         "network.html",
         config=config,
         error=error,
+        errors=errors,
+        values=values,
+        select_fields=SELECT_FIELDS,
         selected_network_type=selected_network_type,
     )
 
@@ -81,7 +110,10 @@ def experiment():
     return render_template(
         "in_progress.html",
         page_name="Experiment",
-        planned_features="Experiment name, loss, metrics, learning rate, epochs, and early stopping settings will be available here.",
+        planned_features=(
+            "Experiment name, loss, metrics, learning rate, epochs, "
+            "and early stopping settings will be available here."
+        ),
     )
 
 

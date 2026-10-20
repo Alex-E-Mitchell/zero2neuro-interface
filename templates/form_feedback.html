@@ -1,0 +1,29 @@
+{% macro error_attributes(name, errors) -%}
+{% if name in errors %}aria-invalid="true" aria-describedby="{{ name }}-error"{% endif %}
+{%- endmacro %}
+
+{% macro field_error(name, errors) -%}
+{% if name in errors %}
+<p class="field-error" id="{{ name }}-error">{{ errors[name] }}</p>
+{% endif %}
+{%- endmacro %}
+
+{% macro error_summary(errors, general_error=None) -%}
+{% if errors or general_error %}
+<div class="error-message" id="form-errors" role="alert" tabindex="-1" aria-labelledby="error-heading">
+    <span class="message-icon" aria-hidden="true">!</span>
+    <div>
+        <h3 id="error-heading">Check your settings</h3>
+        <p>Your entries are still here. Correct the settings below and try again.</p>
+        {% if errors %}
+        <ul>
+            {% for name, message in errors.items() %}
+            <li><a href="#{{ name }}">{{ message }}</a></li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% if general_error %}<p>{{ general_error }}</p>{% endif %}
+    </div>
+</div>
+{% endif %}
+{%- endmacro %}

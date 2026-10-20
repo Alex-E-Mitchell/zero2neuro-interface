@@ -1,9 +1,11 @@
 {% extends "base.html" %}
+{% from "form_feedback.html" import error_attributes, field_error, error_summary %}
 {% block title %}Network Configuration | Zero2Neuro{% endblock %}
 {% block heading %}Network Configuration{% endblock %}
 {% block description %}Configure a fully connected neural network using beginner-friendly settings. Select or hover over the info icons for an explanation of each field.{% endblock %}
 {% block content %}
-        <form method="POST">
+        {{ error_summary(errors, error) }}
+        <form method="POST" novalidate>
             <section class="config-section">
                 <div class="section-heading">
                     <span class="section-number">00</span>
@@ -15,10 +17,15 @@
 
                 <div class="form-group">
                     <label for="network_type">Network Type</label>
-                    <select id="network_type" name="network_type">
-                        <option value="fully_connected"{% if selected_network_type == 'fully_connected' %} selected{% endif %}>Fully Connected</option>
-                        <option value="cnn"{% if selected_network_type == 'cnn' %} selected{% endif %}>CNN</option>
+                    <select id="network_type" name="network_type" {{ error_attributes("network_type", errors) }}>
+                        {% if values.network_type not in dict(select_fields.network_type.choices) %}
+                        <option value="" selected disabled>Choose an option</option>
+                        {% endif %}
+                        {% for value, label in select_fields.network_type.choices %}
+                        <option value="{{ value }}"{% if values.network_type == value %} selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
                     </select>
+                    {{ field_error("network_type", errors) }}
                 </div>
             </section>
             <section class="config-section" id="cnn-status" role="status"{% if selected_network_type != 'cnn' %} hidden{% endif %}>
@@ -50,7 +57,8 @@
                         </button>
                     </div>
 
-                    <input type="text" id="input_shape" name="input_shape" placeholder="{{ 'e.g. 128, 128, 3' if selected_network_type == 'cnn' else 'e.g. 34' }}" value="{{ request.form.get('input_shape', '') }}"{% if selected_network_type == 'fully_connected' %} required{% endif %}>
+                        <input type="text" id="input_shape" name="input_shape" placeholder="{{ 'e.g. 128, 128, 3' if selected_network_type == 'cnn' else 'e.g. 34' }}" value="{{ values.input_shape }}"{% if selected_network_type == 'fully_connected' %} required{% endif %} {{ error_attributes("input_shape", errors) }}>
+                    {{ field_error("input_shape", errors) }}
                 </div>
             </section>
 
@@ -148,7 +156,8 @@
                         </button>
                     </div>
 
-                    <input type="text" id="hidden_units" name="hidden_units" placeholder="64, 32 (or leave blank for zero layers)" value="{{ request.form.get('hidden_units', '') }}">
+                    <input type="text" id="hidden_units" name="hidden_units" placeholder="64, 32 (or leave blank for zero layers)" value="{{ values.hidden_units }}" {{ error_attributes("hidden_units", errors) }}>
+                    {{ field_error("hidden_units", errors) }}
                 </div>
 
                 <div class="form-group">
@@ -163,12 +172,15 @@
                         </button>
                     </div>
 
-                    <select id="hidden_activation" name="hidden_activation">
-                        <option value="elu"{% if request.form.get('hidden_activation', 'elu') == 'elu' %} selected{% endif %}>ELU</option>
-                        <option value="relu"{% if request.form.get('hidden_activation') == 'relu' %} selected{% endif %}>ReLU</option>
-                        <option value="sigmoid"{% if request.form.get('hidden_activation') == 'sigmoid' %} selected{% endif %}>Sigmoid</option>
-                        <option value="tanh"{% if request.form.get('hidden_activation') == 'tanh' %} selected{% endif %}>Tanh</option>
+                    <select id="hidden_activation" name="hidden_activation" {{ error_attributes("hidden_activation", errors) }}>
+                        {% if values.hidden_activation not in dict(select_fields.hidden_activation.choices) %}
+                        <option value="" selected disabled>Choose an option</option>
+                        {% endif %}
+                        {% for value, label in select_fields.hidden_activation.choices %}
+                        <option value="{{ value }}"{% if values.hidden_activation == value %} selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
                     </select>
+                    {{ field_error("hidden_activation", errors) }}
                 </div>
 
                 <div class="form-group">
@@ -239,7 +251,7 @@
 
                 <div class="form-group checkbox-group">
                     <div class="checkbox-row">
-                        <input type="checkbox" id="batch_normalization" name="batch_normalization"{% if 'batch_normalization' in request.form %} checked{% endif %}>
+                        <input type="checkbox" id="batch_normalization" name="batch_normalization"{% if values.batch_normalization %} checked{% endif %}>
 
                         <label for="batch_normalization">Batch Normalization</label>
 
@@ -255,7 +267,7 @@
                 <div class="form-group checkbox-group">
                     <div class="checkbox-row">
 
-                        <input type="checkbox" id="batch_normalization_input" name="batch_normalization_input"{% if 'batch_normalization_input' in request.form %} checked{% endif %}>
+                        <input type="checkbox" id="batch_normalization_input" name="batch_normalization_input"{% if values.batch_normalization_input %} checked{% endif %}>
 
                         <label for="batch_normalization_input">Input Batch Normalization</label>
 
@@ -291,7 +303,8 @@
                         </button>
                     </div>
 
-                    <input type="text" id="output_shape" name="output_shape" placeholder="e.g. 1 or 10, 20" value="{{ request.form.get('output_shape', '') }}"{% if selected_network_type == 'fully_connected' %} required{% endif %}>
+                    <input type="text" id="output_shape" name="output_shape" placeholder="e.g. 1 or 10, 20" value="{{ values.output_shape }}"{% if selected_network_type == 'fully_connected' %} required{% endif %} {{ error_attributes("output_shape", errors) }}>
+                    {{ field_error("output_shape", errors) }}
                 </div>
 
                 <div class="form-group">
@@ -306,12 +319,15 @@
                         </button>
                     </div>
 
-                    <select id="output_activation" name="output_activation">
-                        <option value="elup1"{% if request.form.get('output_activation', 'elup1') == 'elup1' %} selected{% endif %}>ELU+1</option>
-                        <option value="linear"{% if request.form.get('output_activation') == 'linear' %} selected{% endif %}>Linear</option>
-                        <option value="sigmoid"{% if request.form.get('output_activation') == 'sigmoid' %} selected{% endif %}>Sigmoid</option>
-                        <option value="softmax"{% if request.form.get('output_activation') == 'softmax' %} selected{% endif %}>Softmax</option>
+                    <select id="output_activation" name="output_activation" {{ error_attributes("output_activation", errors) }}>
+                        {% if values.output_activation not in dict(select_fields.output_activation.choices) %}
+                        <option value="" selected disabled>Choose an option</option>
+                        {% endif %}
+                        {% for value, label in select_fields.output_activation.choices %}
+                        <option value="{{ value }}"{% if values.output_activation == value %} selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
                     </select>
+                    {{ field_error("output_activation", errors) }}
                 </div>
             </section>
 
@@ -322,12 +338,6 @@
 
         </form>
 
-        {% if error %}
-        <div class="error-message" id="server-error">
-            <span class="message-icon">!</span>
-            <span>{{ error }}</span>
-        </div>
-        {% endif %}
 
         {% if config %}
         <div class="config-output" id="generated-config">
@@ -351,6 +361,9 @@
 <script src="{{ url_for('static', filename='network_selector.js') }}"></script>
 <script src="{{ url_for('static', filename='dropout_validation.js') }}"></script>
     <script>
+        const errorSummary = document.getElementById("form-errors");
+        if (errorSummary) errorSummary.focus();
+
         function copyConfig() {
             const configText = document.getElementById("config-text").innerText;
 
