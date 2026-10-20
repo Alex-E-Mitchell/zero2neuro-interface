@@ -48,5 +48,23 @@ def network():
     )
 
 
+@app.route("/data")
+def data():
+    return render_template(
+        "in_progress.html",
+        page_name="Data",
+        planned_features="Dataset format, file paths, columns, and splitting settings will be available here.",
+    )
+
+
+@app.route("/experiment")
+def experiment():
+    return render_template(
+        "in_progress.html",
+        page_name="Experiment",
+        planned_features="Experiment name, loss, metrics, learning rate, epochs, and early stopping settings will be available here.",
+    )
+
+
 if __name__ == "__main__":
     app.run(debug=True)

@@ -1,40 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zero2Neuro Configuration</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-
-<body>
-
-    <div class="background-grid"></div>
-
-    <main class="container">
-
-        <header class="page-header">
-            <div class="eyebrow">MODEL CONFIGURATION // FULLY CONNECTED</div>
-
-            <div class="title-row">
-                <div>
-                    <h1>Zero2Neuro</h1>
-                    <p class="title-subline">Neural Network Configuration</p>
-                </div>
-
-                <div class="status-badge" aria-label="Configuration type">
-                    <span class="status-dot"></span>
-                    Network Config
-                </div>
-            </div>
-
-            <p class="subtitle">
-                Configure a fully connected neural network using beginner-friendly settings.
-                Hover over the <strong>i</strong> icons for a quick explanation of each field.
-            </p>
-        </header>
-
+{% extends "base.html" %}
+{% block title %}Network Configuration | Zero2Neuro{% endblock %}
+{% block heading %}Network Configuration{% endblock %}
+{% block description %}Configure a fully connected neural network using beginner-friendly settings. Select or hover over the info icons for an explanation of each field.{% endblock %}
+{% block content %}
         <form method="POST">
             <section class="config-section">
                 <div class="section-heading">
@@ -44,7 +12,6 @@
                         <p>Choose the kind of network to configure.</p>
                     </div>
                 </div>
-            </section>
 
                 <div class="form-group">
                     <label for="network_type">Network Type</label>
@@ -231,8 +198,8 @@
         </div>
         {% endif %}
 
-    </main>
-
+{% endblock %}
+{% block scripts %}
     <script>
         function copyConfig() {
             const configText = document.getElementById("config-text").innerText;
@@ -249,6 +216,4 @@
         }
     </script>
 
-</body>
-
-</html>
+{% endblock %}
