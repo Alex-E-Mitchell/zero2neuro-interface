@@ -75,3 +75,42 @@ class TestParserMetadata(unittest.TestCase):
                     self.assertEqual(parsed.input_shape0, input_shape)
                     self.assertEqual(parsed.output_shape0, output_shape)
                     self.assertEqual(parsed.number_hidden_units, hidden)
+
+    def test_inspect_parser_source(self):
+        import tempfile
+        from pathlib import Path
+        from parser_metadata import inspect_parser_source
+
+        source = """
+import argparse
+
+def create_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=100
+    )
+    parser.add_argument(
+        "--optimizer",
+        type=str,
+        default="adam"
+    )
+    return parser
+"""
+
+        with tempfile.TemporaryDirectory() as directory:
+            parser_path = Path(directory) / "parser.py"
+            parser_path.write_text(source, encoding="utf-8")
+
+            metadata = inspect_parser_source(parser_path)
+
+        self.assertEqual(len(metadata), 2)
+
+        self.assertEqual(metadata[0]["option_strings"], ["--epochs"])
+        self.assertEqual(metadata[0]["type"], "int")
+        self.assertEqual(metadata[0]["default"], 100)
+
+        self.assertEqual(metadata[1]["option_strings"], ["--optimizer"])
+        self.assertEqual(metadata[1]["type"], "str")
+        self.assertEqual(metadata[1]["default"], "adam")
