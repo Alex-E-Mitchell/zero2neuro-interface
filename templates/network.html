@@ -303,7 +303,7 @@
                         </button>
                     </div>
 
-                    <input type="text" id="output_shape" name="output_shape" placeholder="e.g. 1 or 10, 20" required value="{{ values.output_shape }}" {{ error_attributes("output_shape", errors) }}>
+                    <input type="text" id="output_shape" name="output_shape" placeholder="e.g. 1 or 10, 20" value="{{ values.output_shape }}"{% if selected_network_type == 'fully_connected' %} required{% endif %} {{ error_attributes("output_shape", errors) }}>
                     {{ field_error("output_shape", errors) }}
                 </div>
 
