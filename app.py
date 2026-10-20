@@ -7,8 +7,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "python"))
 
 from config_generator import generate_network_config, parse_integer_list
 from config_rules import NETWORK_ARCHITECTURES
+from data_page import register_data_page
 
 app = Flask(__name__)
+register_data_page(app)
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -71,15 +73,6 @@ def network():
         config=config,
         error=error,
         selected_network_type=selected_network_type,
-    )
-
-
-@app.route("/data")
-def data():
-    return render_template(
-        "in_progress.html",
-        page_name="Data",
-        planned_features="Dataset format, file paths, columns, and splitting settings will be available here.",
     )
 
 

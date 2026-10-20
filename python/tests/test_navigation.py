@@ -43,7 +43,7 @@ class TestSharedNavigation(unittest.TestCase):
                     self.assertEqual(self.client.get(link['href']).status_code, 200)
 
     def test_placeholders_explain_unavailable_functionality(self):
-        for path, title in (('/data', 'Data'), ('/experiment', 'Experiment')):
+        for path, title in (('/experiment', 'Experiment'),):
             with self.subTest(path=path):
                 page = self.client.get(path).get_data(as_text=True)
                 self.assertIn(title + ' Configuration', page)
