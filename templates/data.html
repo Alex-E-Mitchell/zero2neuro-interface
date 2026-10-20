@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+{% block title %}Data Configuration | Zero2Neuro{% endblock %}
+{% block heading %}Data Configuration{% endblock %}
+{% block description %}Describe your dataset and how it should be split into training, validation, and testing data. Select or hover over the info icons for an explanation of each field.{% endblock %}
+{% block content %}
+        <link rel="stylesheet" href="{{ url_for('static', filename='data.css') }}">
+        {% set current_split = form.get('data_fold_split', 'identity') %}
+        {% set split_rule = fold_split_rules.get(current_split, fold_split_rules['identity']) %}
+        {% set current_set_type = form.get('data_set_type', 'fixed') %}
+        {% set current_format = form.get('data_format', 'tabular') %}
+
+        <form method="POST" id="data-form"
+            data-fold-split-rules='{{ fold_split_rules|tojson }}'
+            data-set-type-help='{{ set_type_help|tojson }}'
+            data-format-help='{{ format_help|tojson }}'>
+
+            <section class="config-section">
+                <div class="section-heading">
+                    <span class="section-number">01</span>
+                    <div>
+                        <h2>Data Source</h2>
+                        <p>Tell Zero2Neuro what kind of file you have and where to find it.</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="data_format">File Format</label>
+
+                        <button type="button" class="info-button" aria-label="About file format">
+                            i
+                            <span class="tooltip">
+                                The kind of file your data is stored in. All of your files must use the same format.
+                            </span>
+                        </button>
+                    </div>
+
+                    <select id="data_format" name="data_format">
+                        {% for key, rule in data_formats.items() %}
+                        <option value="{{ key }}" {% if current_format == key %}selected{% endif %}>{{ rule.label }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="field-hint" id="data_format_help">{{ format_help.get(current_format, '') }}</p>
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="data_directory">Data Directory (optional)</label>
+
+                        <button type="button" class="info-button" aria-label="About data directory">
+                            i
+                            <span class="tooltip">
+                                The folder that holds your data files. Leave blank if the files are in the same folder you run Zero2Neuro from.
+                            </span>
+                        </button>
+                    </div>
+
+                    <input type="text" id="data_directory" name="data_directory" placeholder="e.g. ./data" value="{{ form.get('data_directory', '') }}">
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="data_files">Data Files</label>
+
+                        <button type="button" class="info-button" aria-label="About data files">
+                            i
+                            <span class="tooltip">
+                                The name of each data file, one per line, relative to the data directory.
+                            </span>
+                        </button>
+                    </div>
+
+                    <textarea id="data_files" name="data_files" placeholder="e.g. xor_data.csv" required>{{ form.get('data_files', '') }}</textarea>
+                    <p class="field-hint" id="data_files_hint" {% if not split_rule.file_fold_numbers %}hidden{% endif %}>
+                        This split needs a fold number after each file name, like data_A.csv,0 (folds count from 0).
+                    </p>
+                </div>
+            </section>
+
+            <section class="config-section">
+                <div class="section-heading">
+                    <span class="section-number">02</span>
+                    <div>
+                        <h2>Columns</h2>
+                        <p>Choose which columns the model reads and which it should predict.</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="data_inputs">Input Columns</label>
+
+                        <button type="button" class="info-button" aria-label="About input columns">
+                            i
+                            <span class="tooltip">
+                                The columns (or dictionary keys, for pickle files) the model uses as inputs, one per line. Spell them exactly as they appear in your file.
+                            </span>
+                        </button>
+                    </div>
+
+                    <textarea id="data_inputs" name="data_inputs" placeholder="One column name per line, e.g.&#10;In 0&#10;In 1" required>{{ form.get('data_inputs', '') }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="data_outputs">Output Columns</label>
+
+                        <button type="button" class="info-button" aria-label="About output columns">
+                            i
+                            <span class="tooltip">
+                                The columns the model should learn to predict, one per line.
+                            </span>
+                        </button>
+                    </div>
+
+                    <textarea id="data_outputs" name="data_outputs" placeholder="One column name per line, e.g.&#10;Out 0" required>{{ form.get('data_outputs', '') }}</textarea>
+                </div>
+            </section>
+
+            <section class="config-section">
+                <div class="section-heading">
+                    <span class="section-number">03</span>
+                    <div>
+                        <h2>Dataset Splitting</h2>
+                        <p>Decide how examples are divided into folds, then how folds become training, validation, and testing sets.</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="data_fold_split">How are examples divided into folds?</label>
+
+                        <button type="button" class="info-button" aria-label="About fold split">
+                            i
+                            <span class="tooltip">
+                                A fold is a group of examples that is kept together. Folds are then combined into the training, validation, and testing sets.
+                            </span>
+                        </button>
+                    </div>
+
+                    <select id="data_fold_split" name="data_fold_split">
+                        {% for key, rule in fold_splits.items() %}
+                        <option value="{{ key }}" {% if current_split == key %}selected{% endif %}>{{ rule.label }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="field-hint" id="data_fold_split_help">{{ split_rule.help }}</p>
+                </div>
+
+                <div class="form-group" data-requires-option="data_n_folds" {% if 'data_n_folds' not in split_rule.requires %}hidden{% endif %}>
+                    <div class="label-row">
+                        <label for="data_n_folds">Number of Folds</label>
+
+                        <button type="button" class="info-button" aria-label="About number of folds">
+                            i
+                            <span class="tooltip">
+                                How many random folds to create. For example, 10 folds split into 8 training, 1 validation, and 1 testing fold gives an 80/10/10 split.
+                            </span>
+                        </button>
+                    </div>
+
+                    <input type="number" id="data_n_folds" name="data_n_folds" min="2" step="1" placeholder="e.g. 10" value="{{ form.get('data_n_folds', '') }}">
+                </div>
+
+                <div class="form-group" data-requires-option="data_groups" {% if 'data_groups' not in split_rule.requires %}hidden{% endif %}>
+                    <div class="label-row">
+                        <label for="data_groups">Group Column</label>
+
+                        <button type="button" class="info-button" aria-label="About group column">
+                            i
+                            <span class="tooltip">
+                                The column that holds the fold number (0, 1, 2, ...) for each example.
+                            </span>
+                        </button>
+                    </div>
+
+                    <input type="text" id="data_groups" name="data_groups" placeholder="e.g. fold" value="{{ form.get('data_groups', '') }}">
+                </div>
+
+                <div class="form-group" data-requires-option="data_stratify" {% if 'data_stratify' not in split_rule.requires %}hidden{% endif %}>
+                    <div class="label-row">
+                        <label for="data_stratify">Class Column</label>
+
+                        <button type="button" class="info-button" aria-label="About class column">
+                            i
+                            <span class="tooltip">
+                                The column that holds the class (category) of each example. Each fold will get a similar share of every class.
+                            </span>
+                        </button>
+                    </div>
+
+                    <input type="text" id="data_stratify" name="data_stratify" placeholder="e.g. Class" value="{{ form.get('data_stratify', '') }}">
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="data_set_type">How are folds used?</label>
+
+                        <button type="button" class="info-button" aria-label="About dataset split type">
+                            i
+                            <span class="tooltip">
+                                Fixed is the simplest choice. Cross-validation repeats training with different folds so you can check that your results are consistent.
+                            </span>
+                        </button>
+                    </div>
+
+                    <select id="data_set_type" name="data_set_type">
+                        {% for key, rule in set_types.items() %}
+                        <option value="{{ key }}" {% if current_set_type == key %}selected{% endif %}>{{ rule.label }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="field-hint" id="data_set_type_help">{{ set_type_help.get(current_set_type, '') }}</p>
+                </div>
+            </section>
+
+            <button type="submit" class="generate-button">
+                <span>Generate Configuration</span>
+                <span class="button-arrow">→</span>
+            </button>
+
+        </form>
+
+        {% if error %}
+        <div class="error-message">
+            <span class="message-icon">!</span>
+            <span>{{ error }}</span>
+        </div>
+        {% endif %}
+
+        {% if config %}
+        <div class="config-output">
+            <div class="config-header">
+                <div>
+                    <div class="output-kicker">GENERATED FILE</div>
+                    <h2>data.txt</h2>
+                </div>
+
+                <button type="button" id="copy-button" onclick="copyConfig()">
+                    Copy Config
+                </button>
+            </div>
+
+            <pre id="config-text">{{ config }}</pre>
+        </div>
+        {% endif %}
+
+{% endblock %}
+{% block scripts %}
+    <script>
+        // These dictionaries come from python/data_rules.py, so the page and the
+        // generator always agree about what each choice needs.
+        // They are stored on the <form> tag above and read back here.
+        const dataForm = document.getElementById("data-form");
+        const foldSplitRules = JSON.parse(dataForm.dataset.foldSplitRules);
+        const setTypeHelp = JSON.parse(dataForm.dataset.setTypeHelp);
+        const formatHelp = JSON.parse(dataForm.dataset.formatHelp);
+
+        function syncDataForm() {
+            const split = foldSplitRules[document.getElementById("data_fold_split").value];
+            const requires = split ? split.requires : [];
+
+            document.querySelectorAll("[data-requires-option]").forEach(function (group) {
+                const needed = requires.includes(group.dataset.requiresOption);
+                group.hidden = !needed;
+                group.querySelectorAll("input").forEach(function (field) {
+                    field.disabled = !needed;
+                    field.required = needed;
+                });
+            });
+
+            document.getElementById("data_fold_split_help").textContent = split ? split.help : "";
+            document.getElementById("data_files_hint").hidden = !(split && split.file_fold_numbers);
+            document.getElementById("data_set_type_help").textContent =
+                setTypeHelp[document.getElementById("data_set_type").value] || "";
+            document.getElementById("data_format_help").textContent =
+                formatHelp[document.getElementById("data_format").value] || "";
+        }
+
+        ["data_fold_split", "data_set_type", "data_format"].forEach(function (id) {
+            document.getElementById(id).addEventListener("change", syncDataForm);
+        });
+        syncDataForm();
+
+        function copyConfig() {
+            const configText = document.getElementById("config-text").innerText;
+
+            navigator.clipboard.writeText(configText)
+                .then(() => {
+                    const button = document.getElementById("copy-button");
+                    button.textContent = "Copied!";
+
+                    setTimeout(() => {
+                        button.textContent = "Copy Config";
+                    }, 1500);
+                });
+        }
+    </script>
+{% endblock %}

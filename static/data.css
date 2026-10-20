@@ -1,0 +1,52 @@
+textarea {
+    width: 100%;
+    min-height: 96px;
+    padding: 12px 14px;
+    font-family: inherit;
+    font-size: 1rem;
+    color: var(--text);
+    background: var(--field);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    outline: none;
+    resize: vertical;
+}
+
+textarea::placeholder {
+    color: #5f768c;
+}
+
+textarea:hover {
+    border-color: var(--border-bright);
+    background: #10233a;
+}
+
+textarea:focus {
+    border-color: var(--cyan-strong);
+    box-shadow:
+        0 0 0 3px rgba(33, 199, 243, 0.11),
+        0 0 18px rgba(33, 199, 243, 0.07);
+}
+
+.field-hint {
+    margin: 8px 0 0;
+    font-size: 0.85rem;
+    color: #8fa6bb;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 14px;
+    font-size: 0.85rem;
+    color: #8fd8f0;
+    text-decoration: none;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+/* The hidden attribute must win over .form-group's display rule. */
+[hidden] {
+    display: none !important;
+}
