@@ -28,8 +28,8 @@ def network():
             len(request.form.getlist("network_type")) > 1
             or selected_network_type not in NETWORK_ARCHITECTURES
         ):
-            errors["network_type"] = "Choose one supported network type."
-
+            errors["network_type"] = "Unknown network type. Please choose Fully Connected or CNN."
+            
         optional_values = {}
 
         for name in (
