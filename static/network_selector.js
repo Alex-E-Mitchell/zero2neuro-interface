@@ -23,8 +23,8 @@ function updateNetworkType() {
 networkType.addEventListener("change", () => {
     updateNetworkType();
     // Results and errors belong to the previously submitted network type.
-    for (const id of ["generated-config", "server-error"]) {
-        const element = document.getElementById(id);
+    for (const id of ["generated-config", "form-errors"]) {
+    const element = document.getElementById(id);
         if (element) element.hidden = true;
     }
 });
