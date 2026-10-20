@@ -1,7 +1,9 @@
 import re
 import sys
 import unittest
+from unittest.mock import patch
 from pathlib import Path
+from werkzeug.datastructures import MultiDict
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
@@ -308,3 +310,137 @@ class TestNetworkForm(unittest.TestCase):
         page = self.client.get("/").get_data(as_text=True)
         self.assertIn('name="network_type"', page)
         self.assertIn('value="fully_connected"', page)
+        self.assertIn('value="cnn"', page)
+        self.assertIn('value="fully_connected" selected', page)
+        self.assertIn('id="cnn-status" role="status" hidden', page)
+        self.assertIn('id="cnn-fields" hidden', page)
+        fieldset = re.search(r'<fieldset[^>]*id="fully-connected-fields"[^>]*>', page).group()
+        self.assertNotIn("hidden", fieldset)
+        self.assertNotIn("disabled", fieldset)
+        self.assertIn("/static/network_selector.js", page)
+
+    def test_network_type_section_nesting(self):
+        page = self.client.get("/").get_data(as_text=True)
+        first_section = re.search(r'<section[^>]*>(.*?)</section>', page, re.DOTALL).group(1)
+        self.assertIn("Network Type", first_section)
+        self.assertIn('name="network_type"', first_section)
+        self.assertEqual(len(re.findall(r'<section\b', page)), page.count("</section>"))
+
+    def test_cnn_rejected_before_parsing_or_generation(self):
+        cases = (
+            {"network_type": "cnn"},
+            dict(self.fields, network_type="cnn"),
+            dict(self.fields, network_type="cnn", input_shape="abc", dropout="bad"),
+        )
+        for fields in cases:
+            with self.subTest(fields=fields), patch("app.generate_network_config") as generate:
+                response = self.client.post("/", data=fields)
+                self.assertEqual(response.status_code, 200)
+                page = response.get_data(as_text=True)
+                self.assertIn("CNN configuration is under development", page)
+                self.assertIn("No configuration was generated", page)
+                self.assertIn('value="cnn" selected', page)
+                self.assertIn('id="fully-connected-fields" hidden disabled', page)
+                self.assertNotIn('id="cnn-status" role="status" hidden', page)
+                cnn_fields = re.search(r'<fieldset[^>]*id="cnn-fields"[^>]*>', page).group()
+                self.assertNotIn("hidden", cnn_fields)
+                self.assertNotIn("disabled", cnn_fields)
+                self.assertIn('id="generate-button" disabled', page)
+                self.assertNotIn('id="config-text"', page)
+                for name in ("input_shape", "output_shape"):
+                    tag = re.search(r'<input[^>]*name="' + name + r'"[^>]*>', page).group()
+                    self.assertNotIn("required", tag)
+                    self.assertNotIn("hidden", tag)
+                generate.assert_not_called()
+
+    def test_cnn_fields_match_registry_and_render_defaults(self):
+        from config_rules import NETWORK_ARCHITECTURES
+
+        page = self.client.get("/").get_data(as_text=True)
+        fields = re.search(r'<fieldset[^>]*id="cnn-fields"[^>]*>(.*?)</fieldset>', page, re.DOTALL).group(1)
+        names = re.findall(r'<(?:input|select)[^>]*name="([^"]+)"', fields)
+        self.assertEqual(set(names), {"conv_number_filters", "conv_kernel_size", "conv_pool_size",
+                                     "conv_padding", "conv_activation"})
+        rules = NETWORK_ARCHITECTURES["cnn"]
+        self.assertTrue(set(names) <= rules["required"] | rules["optional"])
+        for name in ("conv_number_filters", "conv_kernel_size", "conv_pool_size"):
+            tag = re.search(r'<input[^>]*name="' + name + r'"[^>]*>', fields).group()
+            self.assertIn('type="text"', tag)
+            self.assertNotIn("required", tag)
+            self.assertNotIn("disabled", tag)
+        self.assertIn('value="valid" selected', fields)
+        self.assertIn('value="elu" selected', fields)
+        self.assertIn("0 skips pooling", fields)
+        self.assertIn("not validated yet", fields)
+
+    def test_cnn_draft_state_preserved_without_validation_or_generation(self):
+        draft = dict(input_shape="128, 128, 3", conv_number_filters="8, 16",
+                     conv_kernel_size="3, 3", conv_pool_size="0, 2",
+                     conv_padding="same", conv_activation="relu")
+        for architecture, shape in (("cnn", "128, 128, 3"), ("fully_connected", "0"),
+                                    ("fully_connected", "34")):
+            with self.subTest(architecture=architecture, shape=shape):
+                fields = dict(self.fields, **draft, network_type=architecture)
+                fields["input_shape"] = shape
+                # Invalid CNN list text is still only a draft and must not interfere with FC validation.
+                fields["conv_kernel_size"] = "not checked yet"
+                page = self.client.post("/", data=fields).get_data(as_text=True)
+                for name in ("input_shape", "conv_number_filters", "conv_kernel_size", "conv_pool_size"):
+                    tag = re.search(r'<input[^>]*name="' + name + r'"[^>]*>', page).group()
+                    self.assertIn(f'value="{fields[name]}"', tag)
+                for name in ("conv_padding", "conv_activation"):
+                    select = re.search(r'<select[^>]*name="' + name + r'"[^>]*>(.*?)</select>', page, re.DOTALL).group(1)
+                    self.assertIn(f'value="{fields[name]}" selected', select)
+                self.assertEqual('id="config-text"' in page, architecture == "fully_connected" and shape == "34")
+                if architecture == "cnn":
+                    self.assertIn('placeholder="e.g. 128, 128, 3"', page)
+                    self.assertIn("CNN configuration generation and validation are under development", page)
+                    self.assertIn('id="generate-button" disabled', page)
+                    self.assertNotIn("exactly one positive integer, such as 34 (the number of input features)", page)
+
+    def test_cnn_draft_text_is_escaped(self):
+        page = self.client.post("/", data={
+            "network_type": "cnn", "conv_number_filters": '<script>alert("draft")</script>',
+        }).get_data(as_text=True)
+        self.assertNotIn('<script>alert("draft")</script>', page)
+        self.assertIn("&lt;script&gt;", page)
+        self.assertNotIn('id="config-text"', page)
+
+    def test_unknown_or_ambiguous_network_type_rejected(self):
+        cases = [{"network_type": value} for value in ("", "unknown", "CNN", "cnn\n--network_type=fully_connected")]
+        cases.append(MultiDict([("network_type", "fully_connected"), ("network_type", "cnn")]))
+        for fields in cases:
+            with self.subTest(fields=fields), patch("app.generate_network_config") as generate:
+                page = self.client.post("/", data=fields).get_data(as_text=True)
+                self.assertIn("Unknown network type", page)
+                self.assertNotIn('id="config-text"', page)
+                generate.assert_not_called()
+
+    def test_form_values_preserved_after_submission(self):
+        for architecture in ("fully_connected", "cnn"):
+            for input_shape in ("34", "0"):
+                with self.subTest(architecture=architecture, input_shape=input_shape):
+                    fields = dict(self.fields, network_type=architecture, input_shape=input_shape,
+                                  hidden_activation="tanh", output_activation="softmax",
+                                  batch_normalization="on", batch_normalization_input="on",
+                                  dropout="0.20", dropout_input="0.10", L1_regularization="0.0010")
+                    page = self.client.post("/", data=fields).get_data(as_text=True)
+                    self.assertIn(f'value="{architecture}" selected', page)
+                    for name in ("input_shape", "hidden_units", "output_shape", "dropout",
+                                 "dropout_input", "L1_regularization"):
+                        tag = re.search(r'<input[^>]*name="' + name + r'"[^>]*>', page).group()
+                        self.assertIn(f'value="{fields[name]}"', tag)
+                    for name in ("hidden_activation", "output_activation"):
+                        select = re.search(r'<select[^>]*name="' + name + r'"[^>]*>(.*?)</select>', page, re.DOTALL).group(1)
+                        self.assertIn(f'value="{fields[name]}" selected', select)
+                    for name in ("batch_normalization", "batch_normalization_input"):
+                        tag = re.search(r'<input[^>]*name="' + name + r'"[^>]*>', page).group()
+                        self.assertIn("checked", tag)
+                    self.assertEqual('id="config-text"' in page, architecture == "fully_connected" and input_shape == "34")
+
+    def test_return_to_fully_connected_after_cnn(self):
+        self.client.post("/", data={"network_type": "cnn"})
+        page = self.client.post("/", data=self.fields).get_data(as_text=True)
+        self.assertIn('value="fully_connected" selected', page)
+        self.assertIn("--network_type=fully_connected", page)
+        self.assertNotIn('class="error-message"', page)
