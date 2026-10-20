@@ -18,6 +18,25 @@ review before adding a CNN UI. No CNN semantic validation is implemented here.
 """
 import math
 
+# Zero2Neuro --dropout and --dropout_input are optional floats (default None), passed to Keras
+# Dropout. The TensorFlow backend requires 0 <= rate < 1 during training.
+DROPOUT_RULES = {
+    "minimum": {"dropout": 0.0, "dropout_input": 0.0},
+    "exclusive_maximum": {"dropout": 1.0, "dropout_input": 1.0},
+}
+
+ACTIVATION_CHOICES = {
+    "hidden_activation": ("elu", "relu", "sigmoid", "tanh"),
+    "output_activation": ("elup1", "linear", "sigmoid", "softmax"),
+}
+ACTIVATION_RULES = {"required": set(ACTIVATION_CHOICES), "choices": ACTIVATION_CHOICES}
+
+# Zero2Neuro's optional float coefficients default to None; Keras requires
+# finite, non-negative values and does not impose an upper bound.
+REGULARIZATION_RULES = {
+    "minimum": {"L1_regularization": 0.0, "L2_regularization": 0.0},
+}
+
 _COMMON_REQUIRED = {"network_type", "input_shape", "output_shape"}
 _COMMON_OPTIONAL = {
     "number_hidden_units", "hidden_activation", "output_activation",
@@ -94,18 +113,28 @@ def validate_config_values(arguments, rules):
         ):
             errors.append(f"{name} is required.")
 
-    for name, minimum in rules.get("minimum", {}).items():
-        value = arguments.get(name)
+    for bound in ("minimum", "maximum", "exclusive_maximum"):
+        for name, limit in rules.get(bound, {}).items():
+            value = arguments.get(name)
 
-        if value is None:
-            continue
+            if value is None:
+                continue
 
-        if isinstance(value, bool) or not isinstance(value, (int, float)):
-            errors.append(f"{name} must be a number.")
-        elif not math.isfinite(value):
-            errors.append(f"{name} must be a finite number.")
-        elif value < minimum:
-            errors.append(f"{name} must be at least {minimum}.")
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                message = f"{name} must be a number."
+            elif not math.isfinite(value):
+                message = f"{name} must be a finite number."
+            elif bound == "minimum" and value < limit:
+                message = f"{name} must be at least {limit}."
+            elif bound == "maximum" and value > limit:
+                message = f"{name} must be at most {limit}."
+            elif bound == "exclusive_maximum" and value >= limit:
+                message = f"{name} must be less than {limit}."
+            else:
+                continue
+
+            if message not in errors:
+                errors.append(message)
 
     for name, allowed_values in rules.get("choices", {}).items():
         value = arguments.get(name)

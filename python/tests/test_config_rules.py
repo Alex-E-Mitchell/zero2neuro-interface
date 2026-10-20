@@ -132,6 +132,64 @@ class TestConfigRules(unittest.TestCase):
             1,
         )
 
+    def test_maximum_validation(self):
+        from config_rules import validate_config_values
+
+        rules = {"maximum": {"rate": 1.0}}
+        for value in (None, 0, 0.5, 1):
+            with self.subTest(rate=value):
+                self.assertEqual(validate_config_values({"rate": value}, rules), [])
+        for value in (1.01, True, "0.5", float("nan"), float("inf"), float("-inf")):
+            with self.subTest(rate=value):
+                self.assertEqual(len(validate_config_values({"rate": value}, rules)), 1)
+
+    def test_dropout_rules(self):
+        from config_rules import DROPOUT_RULES, validate_config_values
+
+        for name in ("dropout", "dropout_input"):
+            for value in (None, 0, 0.25, 0.9999999999999999):
+                with self.subTest(argument=name, value=value):
+                    self.assertEqual(validate_config_values({name: value}, DROPOUT_RULES), [])
+            for value in (-0.01, 1.0, 1.01, True, "0.2", float("nan"), float("inf")):
+                with self.subTest(argument=name, value=value):
+                    self.assertEqual(len(validate_config_values({name: value}, DROPOUT_RULES)), 1)
+
+    def test_regularization_rules(self):
+        from config_rules import REGULARIZATION_RULES, validate_config_values
+
+        for name in ("L1_regularization", "L2_regularization"):
+            self.assertIn(name, NETWORK_ARCHITECTURES["fully_connected"]["optional"])
+            for value in (None, 0, 0.001, 2.5, 1e100):
+                with self.subTest(argument=name, value=value):
+                    self.assertEqual(validate_config_values({name: value}, REGULARIZATION_RULES), [])
+            for value in (-0.001, True, False, "0.001", float("nan"), float("inf"), float("-inf")):
+                with self.subTest(argument=name, value=value):
+                    errors = validate_config_values({name: value}, REGULARIZATION_RULES)
+                    self.assertEqual(len(errors), 1)
+                    self.assertIn(name, errors[0])
+
+    def test_exclusive_maximum(self):
+        from config_rules import validate_config_values
+
+        rules = {"exclusive_maximum": {"rate": 1.0}}
+        for value in (None, 0, 0.9999999999999999):
+            with self.subTest(value=value):
+                self.assertEqual(validate_config_values({"rate": value}, rules), [])
+        for value in (1, 1.01, True, "0.5", float("nan"), float("inf"), float("-inf")):
+            with self.subTest(value=value):
+                self.assertEqual(len(validate_config_values({"rate": value}, rules)), 1)
+
+    def test_activation_rules(self):
+        from config_rules import ACTIVATION_CHOICES, ACTIVATION_RULES, validate_config_values
+
+        for name, choices in ACTIVATION_CHOICES.items():
+            for choice in choices:
+                arguments = {"hidden_activation": "elu", "output_activation": "linear", name: choice}
+                self.assertEqual(validate_config_values(arguments, ACTIVATION_RULES), [])
+            for invalid in (None, "", "unsupported"):
+                arguments = {"hidden_activation": "elu", "output_activation": "linear", name: invalid}
+                self.assertTrue(validate_config_values(arguments, ACTIVATION_RULES))
+
     def test_non_finite_numbers(self):
         from config_rules import validate_config_values
 
