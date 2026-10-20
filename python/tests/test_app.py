@@ -43,6 +43,28 @@ class TestNetworkForm(unittest.TestCase):
                     if not hidden or not hidden.strip():
                         self.assertIn("--number_hidden_units\n--hidden_activation=elu", page)
 
+    def test_batch_normalization_submissions(self):
+        cases = (
+            (),
+            ("batch_normalization",),
+            ("batch_normalization_input",),
+            ("batch_normalization", "batch_normalization_input"),
+        )
+        for selected_fields in cases:
+            with self.subTest(selected=selected_fields):
+                fields = dict(self.fields)
+                # Browsers omit unchecked checkboxes from form submissions.
+                fields.update({name: "on" for name in selected_fields})
+                response = self.client.post("/", data=fields)
+                self.assertEqual(response.status_code, 200)
+                page = response.get_data(as_text=True)
+                self.assertNotIn('class="error-message"', page)
+                config = re.search(r'<pre id="config-text">(.*?)</pre>', page, re.DOTALL)
+                self.assertIsNotNone(config)
+                flags = [line for line in config.group(1).splitlines()
+                         if line.startswith("--batch_normalization")]
+                self.assertEqual(flags, ["--" + name for name in selected_fields])
+
     def test_invalid_submissions(self):
         for field in ("input_shape", "output_shape", "hidden_units"):
             values = ["0", "-4", "1,0", "1.5", "abc", "1,", "1,,2"]

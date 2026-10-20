@@ -36,6 +36,29 @@ class TestConfigGenerator(unittest.TestCase):
         self.assertIn("--output_shape\n1", config)
         self.assertIn("--output_activation=elup1", config)
 
+    def test_batch_normalization_flags(self):
+        cases = (
+            (False, False, []),
+            (True, False, ["--batch_normalization"]),
+            (False, True, ["--batch_normalization_input"]),
+            (True, True, ["--batch_normalization", "--batch_normalization_input"]),
+        )
+        for hidden_enabled, input_enabled, expected_flags in cases:
+            with self.subTest(hidden=hidden_enabled, input=input_enabled):
+                config = generate_network_config(
+                    network_type="fully_connected",
+                    input_shape=[34],
+                    hidden_units=[64, 32],
+                    hidden_activation="elu",
+                    output_shape=[1],
+                    output_activation="linear",
+                    batch_normalization=hidden_enabled,
+                    batch_normalization_input=input_enabled,
+                )
+                flags = [line for line in config.splitlines()
+                         if line.startswith("--batch_normalization")]
+                self.assertEqual(flags, expected_flags)
+
     def test_generate_network_config_rejects_invalid_hidden_units(self):
         with self.assertRaises(ValueError):
             generate_network_config(
