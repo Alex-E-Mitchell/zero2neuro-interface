@@ -57,7 +57,7 @@
                         </button>
                     </div>
 
-                    <input type="text" id="input_shape" name="input_shape" placeholder="e.g. 34 or 128, 128, 3" required value="{{ values.input_shape }}" {{ error_attributes("input_shape", errors) }}>
+                        <input type="text" id="input_shape" name="input_shape" placeholder="{{ 'e.g. 128, 128, 3' if selected_network_type == 'cnn' else 'e.g. 34' }}" value="{{ values.input_shape }}"{% if selected_network_type == 'fully_connected' %} required{% endif %} {{ error_attributes("input_shape", errors) }}>
                     {{ field_error("input_shape", errors) }}
                 </div>
             </section>
