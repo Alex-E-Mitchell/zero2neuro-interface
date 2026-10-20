@@ -15,7 +15,7 @@ SELECT_FIELDS = {
     ("fully_connected", "Fully Connected"),
     ("cnn", "CNN"),
         ),
-),
+    },
     "hidden_activation": {
         "label": "Hidden Activation",
         "default": "elu",
