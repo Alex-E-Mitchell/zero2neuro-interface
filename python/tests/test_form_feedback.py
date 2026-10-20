@@ -36,7 +36,7 @@ class TestFormFeedback(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
         self.fields = {
-            'network_type': 'fully_connected', 'input_shape': ' 128, 128, 3 ',
+            'network_type': 'fully_connected', 'input_shape': '34',
             'hidden_units': '64, 32', 'hidden_activation': 'tanh',
             'output_shape': '10, 20', 'output_activation': 'softmax',
             'batch_normalization': 'on',
