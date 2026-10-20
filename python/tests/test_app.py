@@ -74,6 +74,7 @@ class TestNetworkForm(unittest.TestCase):
             self.assertIn(attribute, tag)
         self.assertNotIn("required", tag)
         self.assertIn("0.2 means 20%", page)
+        self.assertIn("/static/dropout_validation.js", page)
 
     def test_valid_dropout_submissions(self):
         for value, expected in (("0", "0.0"), ("0.2", "0.2"), ("0.9999999999999999", "0.9999999999999999"),
