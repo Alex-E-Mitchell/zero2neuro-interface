@@ -11,8 +11,10 @@ SELECT_FIELDS = {
     "network_type": {
         "label": "Network Type",
         "default": "fully_connected",
-        "choices": (("fully_connected", "Fully Connected"),),
-    },
+        "choices": (
+    ("fully_connected", "Fully Connected"),
+    ("cnn", "CNN"),
+),
     "hidden_activation": {
         "label": "Hidden Activation",
         "default": "elu",
