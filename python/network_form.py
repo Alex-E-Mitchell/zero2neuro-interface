@@ -5,7 +5,7 @@ option. Keep generation and underlying network rules in their existing modules.
 """
 
 from config_generator import parse_integer_list, validate_hidden_units, validate_shape
-
+from config_rules import ACTIVATION_CHOICES
 
 SELECT_FIELDS = {
     "network_type": {
@@ -19,14 +19,18 @@ SELECT_FIELDS = {
     "hidden_activation": {
         "label": "Hidden Activation",
         "default": "elu",
-        "choices": (("elu", "ELU"), ("relu", "ReLU"),
-                    ("sigmoid", "Sigmoid"), ("tanh", "Tanh")),
+        "choices": tuple(
+            (value, value.upper() if value != "tanh" else "Tanh")
+            for value in ACTIVATION_CHOICES["hidden_activation"]
+        ),
     },
     "output_activation": {
         "label": "Output Activation",
         "default": "elup1",
-        "choices": (("elup1", "ELU+1"), ("linear", "Linear"),
-                    ("sigmoid", "Sigmoid"), ("softmax", "Softmax")),
+        "choices": tuple(
+            (value, "ELU+1" if value == "elup1" else value.capitalize())
+            for value in ACTIVATION_CHOICES["output_activation"]
+        ),
     },
 }
 
