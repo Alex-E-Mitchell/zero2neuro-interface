@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% from "form_feedback.html" import error_attributes, field_error, error_summary %}
+{% block title %}Experiment Configuration | Zero2Neuro{% endblock %}
+{% block heading %}Experiment Configuration{% endblock %}
+{% block description %}Choose how your model will train and measure its performance. Generate configuration text to use with your Network and Data settings.{% endblock %}
+{% block content %}
+{{ error_summary(errors) }}
+<form method="POST" novalidate>
+    <section class="config-section">
+        <div class="section-heading">
+            <span class="section-number">01</span>
+            <div><h2>Experiment Details</h2><p>Name this experiment and choose how to measure its results.</p></div>
+        </div>
+        <div class="form-group">
+            <div class="label-row"><label for="experiment_name">Experiment Name</label></div>
+            <input type="text" id="experiment_name" name="experiment_name" value="{{ values.experiment_name }}"
+                   placeholder="e.g. xor-demo" required {{ error_attributes('experiment_name', errors) }}>
+            <p>Start with a letter or number. Use letters, numbers, underscores and hyphens.</p>
+            {{ field_error('experiment_name', errors) }}
+        </div>
+        <div class="form-group">
+            <div class="label-row"><label for="loss">Loss Function</label></div>
+            <select id="loss" name="loss" required {{ error_attributes('loss', errors) }}>
+                {% if values.loss not in loss_choices %}<option value="{{ values.loss }}" selected>Choose a supported loss</option>{% endif %}
+                {% for value, label in loss_choices.items() %}
+                <option value="{{ value }}"{% if values.loss == value %} selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <p>Training tries to reduce this error. Choose a loss that matches your target data and the network's output.</p>
+            {{ field_error('loss', errors) }}
+        </div>
+        <fieldset class="experiment-metrics" id="metrics" tabindex="-1" {{ error_attributes('metrics', errors) }}>
+            <legend>Metrics (optional)</legend>
+            <p>Additional measurements to report. MSE and MAE measure numeric error; accuracy metrics measure classification performance.</p>
+            {% for value, label in metric_choices.items() %}
+            <div class="form-group checkbox-group">
+                <div class="checkbox-row">
+                    <input type="checkbox" id="metric_{{ value }}" name="metrics" value="{{ value }}"{% if value in values.metrics %} checked{% endif %}>
+                    <label for="metric_{{ value }}">{{ label }}</label>
+                </div>
+            </div>
+            {% endfor %}
+            {{ field_error('metrics', errors) }}
+        </fieldset>
+    </section>
+    <section class="config-section">
+        <div class="section-heading">
+            <span class="section-number">02</span>
+            <div><h2>Training Settings</h2><p>Control how the model learns and how long it trains.</p></div>
+        </div>
+        <div class="form-group">
+            <div class="label-row"><label for="learning_rate">Learning Rate</label></div>
+            <input type="text" inputmode="decimal" id="learning_rate" name="learning_rate"
+                   value="{{ values.learning_rate }}" required {{ error_attributes('learning_rate', errors) }}>
+            <p>Controls the size of training updates. Enter a number greater than zero, such as 0.0001 or 0.001. Scientific notation, such as 1e-4, also works.</p>
+            {{ field_error('learning_rate', errors) }}
+        </div>
+        <div class="form-group">
+            <div class="label-row"><label for="epochs">Epochs</label></div>
+            <input type="text" inputmode="numeric" id="epochs" name="epochs"
+                   value="{{ values.epochs }}" required {{ error_attributes('epochs', errors) }}>
+            <p>Maximum passes through the training data. Enter a whole number of at least 1.</p>
+            {{ field_error('epochs', errors) }}
+        </div>
+    </section>
+    <section class="config-section">
+        <div class="section-heading">
+            <span class="section-number">03</span>
+            <div><h2>Early Stopping</h2><p>Stop training when the monitored loss stops improving.</p></div>
+        </div>
+        <div class="form-group checkbox-group">
+            <div class="checkbox-row">
+                <input type="checkbox" id="early_stopping" name="early_stopping" value="on"
+                       aria-controls="early-stopping-fields"{% if values.early_stopping %} checked{% endif %}
+                       {{ error_attributes('early_stopping', errors) }}>
+                <label for="early_stopping">Enable Early Stopping</label>
+            </div>
+            {{ field_error('early_stopping', errors) }}
+        </div>
+        <p>These settings are used only when early stopping is enabled.</p>
+        <div id="early-stopping-fields">
+            <div class="form-group">
+                <div class="label-row"><label for="early_stopping_monitor">Monitor</label></div>
+                <select id="early_stopping_monitor" name="early_stopping_monitor" {{ error_attributes('early_stopping_monitor', errors) }}>
+                    {% if values.early_stopping_monitor not in monitor_choices %}<option value="{{ values.early_stopping_monitor }}" selected>Choose a supported monitor</option>{% endif %}
+                    {% for value, label in monitor_choices.items() %}
+                    <option value="{{ value }}"{% if values.early_stopping_monitor == value %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <p>Use validation loss only if your Data configuration provides a validation set. This page cannot check settings on other pages.</p>
+                {{ field_error('early_stopping_monitor', errors) }}
+            </div>
+            <div class="form-group">
+                <div class="label-row"><label for="early_stopping_patience">Patience</label></div>
+                <input type="text" inputmode="numeric" id="early_stopping_patience" name="early_stopping_patience"
+                       value="{{ values.early_stopping_patience }}" {{ error_attributes('early_stopping_patience', errors) }}>
+                <p>Epochs without sufficient improvement before stopping. Enter a whole number of 0 or more.</p>
+                {{ field_error('early_stopping_patience', errors) }}
+            </div>
+            <div class="form-group">
+                <div class="label-row"><label for="early_stopping_min_delta">Minimum Improvement</label></div>
+                <input type="text" inputmode="decimal" id="early_stopping_min_delta" name="early_stopping_min_delta"
+                       value="{{ values.early_stopping_min_delta }}" {{ error_attributes('early_stopping_min_delta', errors) }}>
+                <p>How much the loss must decrease to count as improvement. Use 0 to count any decrease. Zero2Neuro's default is 0.01.</p>
+                {{ field_error('early_stopping_min_delta', errors) }}
+            </div>
+        </div>
+    </section>
+    <button type="submit" class="generate-button"><span>Generate Configuration</span><span class="button-arrow" aria-hidden="true">→</span></button>
+</form>
+{% if config %}
+<div class="config-output" id="generated-config" tabindex="-1">
+    <div class="config-header">
+        <div><div class="output-kicker">GENERATED CONFIGURATION</div><h2>Experiment Settings</h2></div>
+        <button type="button" id="copy-button">Copy Config</button>
+    </div>
+    <pre id="config-text">{{ config }}</pre>
+    <p id="copy-status" role="status" aria-live="polite"></p>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='experiment.js') }}"></script>
+{% endblock %}

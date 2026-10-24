@@ -81,6 +81,16 @@ The interface also includes:
 - a Copy button that copies only the generated configuration text
 - basic styling for a cleaner beginner-facing workflow
 
+## Experiment Configuration
+
+The Experiment page at `/experiment` supports experiment name, loss, optional
+metrics, learning rate, epochs and early stopping settings. Submissions are
+validated on the server and produce configuration text with a Copy Config button.
+Invalid submissions preserve entered values and show field-specific feedback.
+
+See [Experiment page notes](docs/EXPERIMENT_PAGE.md) for supported choices,
+upstream source references, manual checks and remaining Phase 2 work.
+
 ## Current Guardrails
 
 The prototype currently validates several beginner-facing settings before generating configuration output.

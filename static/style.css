@@ -557,3 +557,14 @@ a:focus-visible, button:focus-visible {
 .error-message:focus { outline: 2px solid var(--danger); outline-offset: 4px; }
 .field-error { margin: 8px 0 0; color: #ffc2ca; font-size: 0.9rem; line-height: 1.5; }
 input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--danger); }
+
+/* Experiment metrics use the existing checkbox styling. */
+.experiment-metrics {
+    min-width: 0;
+    margin: 22px 0 0;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+}
+.experiment-metrics legend { font-weight: 700; padding: 0 6px; }
+.experiment-metrics p { color: var(--muted); }

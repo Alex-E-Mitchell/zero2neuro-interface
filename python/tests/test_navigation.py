@@ -42,15 +42,12 @@ class TestSharedNavigation(unittest.TestCase):
                 for link in parser.links:
                     self.assertEqual(self.client.get(link['href']).status_code, 200)
 
-    def test_placeholders_explain_unavailable_functionality(self):
-        for path, title in (('/experiment', 'Experiment'),):
-            with self.subTest(path=path):
-                page = self.client.get(path).get_data(as_text=True)
-                self.assertIn(title + ' Configuration', page)
-                self.assertIn('This configuration page is in progress.', page)
-                self.assertIn('does not collect settings or generate configuration text yet', page)
-                self.assertNotIn('<form', page)
-                self.assertEqual(self.client.post(path, data={}).status_code, 405)
+    def test_experiment_has_a_form_and_accepts_submissions(self):
+        page = self.client.get('/experiment').get_data(as_text=True)
+        self.assertIn('Experiment Configuration', page)
+        self.assertIn('<form', page)
+        self.assertNotIn('This configuration page is in progress.', page)
+        self.assertEqual(self.client.post('/experiment', data={}).status_code, 200)
 
     def test_network_submission_keeps_shared_navigation(self):
         response = self.client.post('/', data={
