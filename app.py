@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 
@@ -6,6 +7,7 @@ from flask import Flask, render_template, request
 sys.path.insert(0, str(Path(__file__).resolve().parent / "python"))
 
 from config_generator import generate_network_config
+from config_store import save_config, clear_config
 from config_rules import (
     NETWORK_ARCHITECTURES,
     DROPOUT_RULES,
@@ -14,15 +16,20 @@ from config_rules import (
 )
 from network_form import SELECT_FIELDS, prepare_network_form
 from data_page import register_data_page
+from review_page import register_review_page
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY") or os.urandom(32)
 register_data_page(app)
-
+register_review_page(app)
 
 @app.route("/", methods=["GET", "POST"])
 def network():
     config = None
     error = None
+    
+    if request.method == "POST":
+        clear_config("network")
 
     values, arguments, errors = prepare_network_form(
         request.form if request.method == "POST" else None
@@ -84,6 +91,7 @@ def network():
                         **arguments,
                         **optional_values,
                     )
+                    save_config("network", config)
                 except (ValueError, KeyError) as exc:
                     error = str(exc)
 

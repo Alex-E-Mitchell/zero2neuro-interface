@@ -1,0 +1,64 @@
+
+{% extends "base.html" %}
+
+{% block title %}Review Configuration - Zero2Neuro{% endblock %}
+
+{% block heading %}Review and Export{% endblock %}
+
+{% block description %}
+Review your Network, Data, and Experiment configurations before exporting.
+{% endblock %}
+
+{% block content %}
+
+<!-- Configuration Status -->
+<section class="form-section">
+    <h3>Configuration Status</h3>
+
+    {% if ready_for_export %}
+        <p>All three configurations are available for export.</p>
+
+        <a
+            href="{{ url_for('download_all_configs') }}"
+            class="download-button"
+        >
+            <span class="download-icon" aria-hidden="true">&#8595;</span>
+            <span>Download All Configurations (.zip)</span>
+        </a>
+
+    {% else %}
+        <p>Configuration is incomplete.</p>
+        <p>
+            Missing:
+            {{ missing_configs | join(", ") }}
+        </p>
+        <p>
+            Generate the missing configurations before exporting
+            the complete configuration package.
+        </p>
+    {% endif %}
+</section>
+
+<!-- Individual Configuration Previews -->
+{% for name, config in configurations.items() %}
+<section class="form-section">
+    <h3>{{ name | capitalize }} Configuration</h3>
+
+    {% if config %}
+        <pre>{{ config }}</pre>
+
+        <a
+            href="{{ url_for('download_config', name=name) }}"
+            class="download-button"
+        >
+            <span class="download-icon" aria-hidden="true">&#8595;</span>
+            <span>Download {{ name }}.txt</span>
+        </a>
+
+    {% else %}
+        <p>No {{ name }} configuration has been generated yet.</p>
+    {% endif %}
+</section>
+{% endfor %}
+
+{% endblock %}
