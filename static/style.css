@@ -609,3 +609,13 @@ input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--da
     font-weight: 500;
     line-height: 1;
 }
+/* Experiment metrics use the existing checkbox styling. */
+.experiment-metrics {
+    min-width: 0;
+    margin: 22px 0 0;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+}
+.experiment-metrics legend { font-weight: 700; padding: 0 6px; }
+.experiment-metrics p { color: var(--muted); }

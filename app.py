@@ -17,11 +17,14 @@ from config_rules import (
 from network_form import SELECT_FIELDS, prepare_network_form
 from data_page import register_data_page
 from review_page import register_review_page
+from experiment_page import register_experiment_page
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or os.urandom(32)
 register_data_page(app)
 register_review_page(app)
+register_experiment_page(app)
+
 
 @app.route("/", methods=["GET", "POST"])
 def network():
@@ -103,18 +106,6 @@ def network():
         values=values,
         select_fields=SELECT_FIELDS,
         selected_network_type=selected_network_type,
-    )
-
-
-@app.route("/experiment")
-def experiment():
-    return render_template(
-        "in_progress.html",
-        page_name="Experiment",
-        planned_features=(
-            "Experiment name, loss, metrics, learning rate, epochs, "
-            "and early stopping settings will be available here."
-        ),
     )
 
 
