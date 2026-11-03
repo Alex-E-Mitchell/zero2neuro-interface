@@ -141,3 +141,142 @@ def test_invalid_data_preserves_network_config(client):
     assert b"No data configuration has been generated yet." in (
         review_response.data
     )
+
+
+def test_experiment_config_saved_to_review(client):
+    """Generated Experiment configurations appear in Review and can be downloaded."""
+
+    valid_fields = {
+        "experiment_name": "xor-demo",
+        "loss": "mse",
+        "learning_rate": "0.001",
+        "epochs": "5000",
+        "early_stopping_monitor": "loss",
+        "early_stopping_patience": "2000",
+        "early_stopping_min_delta": "0.01",
+    }
+
+    # Generate a valid Experiment configuration.
+    response = client.post("/experiment", data=valid_fields)
+
+    assert response.status_code == 200
+    assert b"--experiment_name=xor-demo" in response.data
+
+    # Verify that Review displays the saved configuration.
+    review_response = client.get("/review")
+
+    assert review_response.status_code == 200
+    assert b"--experiment_name=xor-demo" in review_response.data
+
+    # Verify that the configuration can be downloaded.
+    download_response = client.get("/review/download/experiment")
+
+    assert download_response.status_code == 200
+    assert b"--experiment_name=xor-demo" in download_response.data
+    assert "experiment.txt" in download_response.headers["Content-Disposition"]
+
+
+def test_invalid_experiment_submission_clears_saved_config(client):
+    """Invalid Experiment submissions remove outdated configurations."""
+
+    valid_fields = {
+        "experiment_name": "xor-demo",
+        "loss": "mse",
+        "learning_rate": "0.001",
+        "epochs": "5000",
+    }
+
+    # Generate and save a valid Experiment configuration.
+    response = client.post("/experiment", data=valid_fields)
+    assert response.status_code == 200
+
+    review_response = client.get("/review")
+    assert b"--experiment_name=xor-demo" in review_response.data
+
+    # Submit an invalid Experiment configuration.
+    invalid_fields = dict(valid_fields, epochs="-1")
+
+    response = client.post("/experiment", data=invalid_fields)
+
+    assert response.status_code == 200
+    assert b'id="form-errors"' in response.data
+
+    # Verify the outdated Experiment configuration was removed.
+    review_response = client.get("/review")
+
+    assert b"--experiment_name=xor-demo" not in review_response.data
+
+    # The old configuration should no longer be downloadable.
+    download_response = client.get("/review/download/experiment")
+    assert download_response.status_code == 404
+
+
+
+def test_full_configuration_workflow(client):
+    """Generate all three configurations and export them together."""
+    from io import BytesIO
+    from zipfile import ZipFile
+
+    # Generate Network configuration.
+    network_response = client.post("/", data={
+        "network_type": "fully_connected",
+        "input_shape": "34",
+        "hidden_units": "64,32",
+        "hidden_activation": "elu",
+        "output_shape": "1",
+        "output_activation": "linear",
+    })
+
+    assert network_response.status_code == 200
+    assert b"--network_type=fully_connected" in network_response.data
+
+    # Generate Data configuration.
+    data_response = client.post("/data", data={
+        "data_format": "tabular",
+        "data_directory": "",
+        "data_files": "xor_data.csv",
+        "data_inputs": "In 0\nIn 1",
+        "data_outputs": "Out 0",
+        "data_fold_split": "identity",
+        "data_set_type": "fixed",
+    })
+
+    assert data_response.status_code == 200
+    assert b"--data_format=tabular" in data_response.data
+
+    # Generate Experiment configuration.
+    experiment_response = client.post("/experiment", data={
+        "experiment_name": "xor-demo",
+        "loss": "mse",
+        "learning_rate": "0.001",
+        "epochs": "5000",
+    })
+
+    assert experiment_response.status_code == 200
+    assert b"--experiment_name=xor-demo" in experiment_response.data
+
+    # Verify all three configurations appear on Review.
+    review_response = client.get("/review")
+
+    assert review_response.status_code == 200
+    assert b"--network_type=fully_connected" in review_response.data
+    assert b"--data_format=tabular" in review_response.data
+    assert b"--experiment_name=xor-demo" in review_response.data
+
+    # Download the combined ZIP file.
+    zip_response = client.get("/review/download-all")
+
+    assert zip_response.status_code == 200
+    assert zip_response.mimetype == "application/zip"
+
+    # Verify ZIP contents.
+    with ZipFile(BytesIO(zip_response.data)) as archive:
+        assert set(archive.namelist()) == {
+            "network.txt",
+            "data.txt",
+            "experiment.txt",
+        }
+
+        assert b"--network_type=fully_connected" in archive.read("network.txt")
+        assert b"--data_format=tabular" in archive.read("data.txt")
+        assert b"--experiment_name=xor-demo" in archive.read("experiment.txt")
