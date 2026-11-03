@@ -1,6 +1,7 @@
 """Experiment form handling using the shared layout and validation feedback."""
 
 from flask import render_template, request
+from config_store import save_config, clear_config
 
 from experiment_generator import (
     DEFAULT_VALUES, LOSS_CHOICES, METRIC_CHOICES, MONITOR_CHOICES,
@@ -53,12 +54,18 @@ def prepare_experiment_form(submitted=None):
 
 
 def experiment():
+    if request.method == "POST":
+        clear_config("experiment")
+
     values, arguments, errors = prepare_experiment_form(
         request.form if request.method == "POST" else None
     )
+
     config = None
     if request.method == "POST" and not errors:
         config = generate_experiment_config(arguments)
+        save_config("experiment", config)
+
     return render_template(
         "experiment.html", values=values, errors=errors, config=config,
         loss_choices=LOSS_CHOICES, metric_choices=METRIC_CHOICES,
