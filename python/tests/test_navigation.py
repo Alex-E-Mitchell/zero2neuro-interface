@@ -30,13 +30,13 @@ class TestSharedNavigation(unittest.TestCase):
         self.client = app.test_client()
 
     def test_every_page_links_to_all_pages_and_marks_only_itself_current(self):
-        for path in ('/', '/data', '/experiment'):
+        for path in ('/', '/data', '/experiment', '/review'):
             with self.subTest(path=path):
                 response = self.client.get(path)
                 self.assertEqual(response.status_code, 200)
                 parser = NavigationParser()
                 parser.feed(response.get_data(as_text=True))
-                self.assertEqual([link['href'] for link in parser.links], ['/', '/data', '/experiment'])
+                self.assertEqual([link['href'] for link in parser.links], ['/', '/data', '/experiment', '/review'])
                 self.assertEqual([link['href'] for link in parser.links
                                   if link.get('aria-current') == 'page'], [path])
                 for link in parser.links:
@@ -59,5 +59,5 @@ class TestSharedNavigation(unittest.TestCase):
         self.assertIn('--network_type=fully_connected', page)
         parser = NavigationParser()
         parser.feed(page)
-        self.assertEqual(len(parser.links), 3)
+        self.assertEqual(len(parser.links), 4)
         self.assertEqual(parser.links[0].get('aria-current'), 'page')
