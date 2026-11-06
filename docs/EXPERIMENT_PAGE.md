@@ -23,8 +23,10 @@ nonnegative minimum improvement. These stricter bounds are interface guardrails,
 not argparse declarations. Disabled early stopping values are ignored and omitted.
 An empty metrics selection omits `--metrics`, since upstream uses `nargs='+'`.
 
-Generated text can be copied. Output/result settings and file downloads remain
-Phase 2 work. This page does not train a model or prove compatibility between
+Generated text can be copied or downloaded as `experiment.txt` using the controls
+beside the preview. Downloads reuse the Review page's `download_config` route and
+the configuration saved for the current browser session. Output/result settings
+remain Phase 2 work. This page does not train a model or prove compatibility between
 loss/metrics, Network outputs and Data targets. Validation-loss monitoring needs a
 validation set; the page explains that requirement but cannot inspect other pages.
 
@@ -43,7 +45,9 @@ Start on macOS with `python -m flask --app app run --debug --port 5001`.
 1. Open `/experiment`; confirm Network/Data/Experiment navigation works.
 2. Set name `xor-demo`, loss MSE, metrics MAE and MSE, rate `0.001`, epochs `5000`.
 3. Enable early stopping with training loss, patience `2000`, minimum improvement `0.01`.
-4. Generate and copy the text; metrics must appear on separate lines.
+4. Generate and copy the text; metrics must appear on separate lines. Click
+   Download .txt and confirm `experiment.txt` matches the generated text, including
+   line breaks. Both controls should remain usable at narrow screen widths.
 5. Submit rate `0` and epochs `1.5`; both fields should have errors and retain entries.
 6. Turn early stopping off; generation should omit all early stopping options.
 

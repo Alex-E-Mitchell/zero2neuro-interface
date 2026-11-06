@@ -112,7 +112,10 @@
 <div class="config-output" id="generated-config" tabindex="-1">
     <div class="config-header">
         <div><div class="output-kicker">GENERATED CONFIGURATION</div><h2>Experiment Settings</h2></div>
-        <button type="button" id="copy-button">Copy Config</button>
+        <div class="config-actions">
+            <button type="button" id="copy-button">Copy Config</button>
+            <a id="download-button" href="{{ url_for('download_config', name='experiment') }}">Download .txt</a>
+        </div>
     </div>
     <pre id="config-text">{{ config }}</pre>
     <p id="copy-status" role="status" aria-live="polite"></p>
