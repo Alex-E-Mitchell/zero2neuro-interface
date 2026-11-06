@@ -1,6 +1,6 @@
 from config_rules import (
     ACTIVATION_RULES, DROPOUT_RULES, REGULARIZATION_RULES,
-    validate_config_values, validate_required_arguments,
+    validate_config_values, validate_required_arguments, validate_cnn_arguments,
 )
 
 
@@ -40,9 +40,21 @@ def generate_network_config(
     dropout_input=None,
     L1_regularization=None,
     L2_regularization=None,
+    conv_number_filters=None,
+    conv_kernel_size=None,
+    conv_pool_size=None,
+    conv_padding="valid",
+    conv_activation="elu",
 ):
     """Generate a small Zero2Neuro-style network configuration string."""
 
+    cnn_arguments = {
+        "conv_number_filters": conv_number_filters,
+        "conv_kernel_size": conv_kernel_size,
+        "conv_pool_size": conv_pool_size,
+        "conv_padding": conv_padding,
+        "conv_activation": conv_activation,
+    }
     validate_required_arguments(network_type, {
         "network_type": network_type,
         "input_shape": input_shape,
@@ -50,6 +62,7 @@ def generate_network_config(
         "hidden_activation": hidden_activation,
         "output_shape": output_shape,
         "output_activation": output_activation,
+        **cnn_arguments,
     })
 
     if not validate_shape(input_shape):
@@ -60,6 +73,11 @@ def generate_network_config(
             "Fully Connected input shape must contain exactly one positive integer, "
             "such as 34 (the number of input features)."
         )
+
+    if network_type == "cnn":
+        cnn_errors = validate_cnn_arguments(input_shape, cnn_arguments)
+        if cnn_errors:
+            raise ValueError(" ".join(cnn_errors.values()))
 
     if not validate_hidden_units(hidden_units):
         raise ValueError("Hidden layer sizes must be positive integers.")
@@ -74,7 +92,7 @@ def generate_network_config(
     errors.extend(validate_config_values({
         "hidden_activation": hidden_activation, "output_activation": output_activation,
     }, ACTIVATION_RULES))
-    if network_type == "fully_connected" and L1_regularization is not None and L2_regularization is not None:
+    if L1_regularization is not None and L2_regularization is not None:
         errors.append(
             "L1 and L2 regularization cannot be supplied together with the installed "
             "Zero2Neuro/Keras version. Leave one field blank; zero still counts as supplied."
@@ -85,6 +103,11 @@ def generate_network_config(
     # A bare hidden-units option parses as [] with nargs='*'; omitting it gives None.
     lines = [f"--network_type={network_type}", "--input_shape"]
     lines.extend(str(dimension) for dimension in input_shape)
+    if network_type == "cnn":
+        for name in ("conv_number_filters", "conv_kernel_size", "conv_pool_size"):
+            lines.append(f"--{name}")
+            lines.extend(str(value) for value in cnn_arguments[name])
+        lines.extend((f"--conv_padding={conv_padding}", f"--conv_activation={conv_activation}"))
     lines.append("--number_hidden_units")
     lines.extend(str(unit) for unit in hidden_units)
     lines.append(f"--hidden_activation={hidden_activation}")

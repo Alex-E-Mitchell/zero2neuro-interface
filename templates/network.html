@@ -2,7 +2,7 @@
 {% from "form_feedback.html" import error_attributes, field_error, error_summary %}
 {% block title %}Network Configuration | Zero2Neuro{% endblock %}
 {% block heading %}Network Configuration{% endblock %}
-{% block description %}Configure a fully connected neural network using beginner-friendly settings. Select or hover over the info icons for an explanation of each field.{% endblock %}
+{% block description %}Configure a Fully Connected network or CNN using beginner-friendly settings. Select or hover over the info icons for an explanation of each field.{% endblock %}
 {% block content %}
         {{ error_summary(errors, error) }}
         <form method="POST" novalidate>
@@ -29,9 +29,10 @@
                 </div>
             </section>
             <section class="config-section" id="cnn-status" role="status"{% if selected_network_type != 'cnn' %} hidden{% endif %}>
-                <h2>CNN Configuration Preview</h2>
-                <p>CNN configuration generation and validation are under development. You can explore the form,
-                    but CNN configurations cannot be generated yet. Choose Fully Connected to generate a configuration now.</p>
+                <h2>CNN Configuration</h2>
+                <p>Configure convolution layers followed by global max pooling and optional dense layers.
+                    Use matching list lengths: each position describes one convolution layer.</p>
+                <p>Input Dropout and Input Batch Normalization currently have no effect in Zero2Neuro's CNN builder.</p>
             </section>
 
             <section class="config-section">
@@ -57,16 +58,16 @@
                         </button>
                     </div>
 
-                        <input type="text" id="input_shape" name="input_shape" placeholder="{{ 'e.g. 128, 128, 3' if selected_network_type == 'cnn' else 'e.g. 34' }}" value="{{ values.input_shape }}"{% if selected_network_type == 'fully_connected' %} required{% endif %} {{ error_attributes("input_shape", errors) }}>
+                        <input type="text" id="input_shape" name="input_shape" placeholder="{{ 'e.g. 128, 128, 3' if selected_network_type == 'cnn' else 'e.g. 34' }}" value="{{ values.input_shape }}" required {{ error_attributes("input_shape", errors) }}>
                     {{ field_error("input_shape", errors) }}
                 </div>
             </section>
 
-            {# Hidden CNN draft controls stay enabled so FC POSTs retain their values; the backend ignores them. #}
+            {# Hidden CNN values are retained on FC POSTs and ignored by its generator. #}
             <fieldset class="config-section" id="cnn-fields"{% if selected_network_type != 'cnn' %} hidden{% endif %}>
                 <legend>CNN Convolution Layers</legend>
                 <p>Each position in the lists describes the same layer. For two layers, try filters 8, 16;
-                    kernel sizes 3, 3; and max-pooling sizes 0, 2. These settings are a draft and are not validated yet.</p>
+                    kernel sizes 3, 3; and max-pooling sizes 0, 2. All three lists must be non-empty and have the same number of layers.</p>
 
                 <div class="form-group">
                     <div class="label-row">
@@ -77,7 +78,8 @@
                         </button>
                     </div>
                     <input type="text" id="conv_number_filters" name="conv_number_filters" placeholder="e.g. 8, 16"
-                           value="{{ request.form.get('conv_number_filters', '') }}">
+                           value="{{ values.conv_number_filters }}" {{ error_attributes("conv_number_filters", errors) }}>
+                    {{ field_error("conv_number_filters", errors) }}
                 </div>
 
                 <div class="form-group">
@@ -89,7 +91,8 @@
                         </button>
                     </div>
                     <input type="text" id="conv_kernel_size" name="conv_kernel_size" placeholder="e.g. 3, 3"
-                           value="{{ request.form.get('conv_kernel_size', '') }}">
+                           value="{{ values.conv_kernel_size }}" {{ error_attributes("conv_kernel_size", errors) }}>
+                    {{ field_error("conv_kernel_size", errors) }}
                 </div>
 
                 <div class="form-group">
@@ -101,7 +104,8 @@
                         </button>
                     </div>
                     <input type="text" id="conv_pool_size" name="conv_pool_size" placeholder="e.g. 0, 2"
-                           value="{{ request.form.get('conv_pool_size', '') }}">
+                           value="{{ values.conv_pool_size }}" {{ error_attributes("conv_pool_size", errors) }}>
+                    {{ field_error("conv_pool_size", errors) }}
                 </div>
 
                 <div class="form-group">
@@ -112,10 +116,13 @@
                             <span class="tooltip">Valid adds no border and usually reduces spatial size. Same adds border zeros to preserve spatial size when convolution stride is 1. This setting also applies to pooling; pooling can still reduce size.</span>
                         </button>
                     </div>
-                    <select id="conv_padding" name="conv_padding">
-                        <option value="valid"{% if request.form.get('conv_padding', 'valid') == 'valid' %} selected{% endif %}>Valid (no added border)</option>
-                        <option value="same"{% if request.form.get('conv_padding') == 'same' %} selected{% endif %}>Same (add border zeros)</option>
+                    <select id="conv_padding" name="conv_padding" {{ error_attributes("conv_padding", errors) }}>
+                        {% if values.conv_padding not in dict(select_fields.conv_padding.choices) %}<option value="" selected disabled>Choose an option</option>{% endif %}
+                        {% for value, label in select_fields.conv_padding.choices %}
+                        <option value="{{ value }}"{% if values.conv_padding == value %} selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
                     </select>
+                    {{ field_error("conv_padding", errors) }}
                 </div>
 
                 <div class="form-group">
@@ -126,21 +133,22 @@
                             <span class="tooltip">Rule applied to the patterns learned by every convolution layer. ELU is Zero2Neuro's default. These are suggested beginner choices.</span>
                         </button>
                     </div>
-                    <select id="conv_activation" name="conv_activation">
-                        <option value="elu"{% if request.form.get('conv_activation', 'elu') == 'elu' %} selected{% endif %}>ELU</option>
-                        <option value="relu"{% if request.form.get('conv_activation') == 'relu' %} selected{% endif %}>ReLU</option>
-                        <option value="sigmoid"{% if request.form.get('conv_activation') == 'sigmoid' %} selected{% endif %}>Sigmoid</option>
-                        <option value="tanh"{% if request.form.get('conv_activation') == 'tanh' %} selected{% endif %}>Tanh</option>
+                    <select id="conv_activation" name="conv_activation" {{ error_attributes("conv_activation", errors) }}>
+                        {% if values.conv_activation not in dict(select_fields.conv_activation.choices) %}<option value="" selected disabled>Choose an option</option>{% endif %}
+                        {% for value, label in select_fields.conv_activation.choices %}
+                        <option value="{{ value }}"{% if values.conv_activation == value %} selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
                     </select>
+                    {{ field_error("conv_activation", errors) }}
                 </div>
             </fieldset>
 
-            <fieldset class="config-section" id="fully-connected-fields"{% if selected_network_type != 'fully_connected' %} hidden disabled{% endif %}>
+            <fieldset class="config-section" id="fully-connected-fields"{% if selected_network_type not in ('fully_connected', 'cnn') %} hidden disabled{% endif %}>
                 <div class="section-heading">
                     <span class="section-number">02</span>
                     <div>
                         <h2>Fully Connected Settings</h2>
-                        <p>Choose how the network processes information internally.</p>
+                        <p>Choose dense layers and their settings. In a CNN, these follow global max pooling.</p>
                     </div>
                 </div>
 
@@ -303,7 +311,7 @@
                         </button>
                     </div>
 
-                    <input type="text" id="output_shape" name="output_shape" placeholder="e.g. 1 or 10, 20" value="{{ values.output_shape }}"{% if selected_network_type == 'fully_connected' %} required{% endif %} {{ error_attributes("output_shape", errors) }}>
+                    <input type="text" id="output_shape" name="output_shape" placeholder="e.g. 1 or 10, 20" value="{{ values.output_shape }}" required {{ error_attributes("output_shape", errors) }}>
                     {{ field_error("output_shape", errors) }}
                 </div>
 
@@ -331,7 +339,7 @@
                 </div>
             </section>
 
-            <button type="submit" class="generate-button" id="generate-button"{% if selected_network_type == 'cnn' %} disabled{% endif %}>
+            <button type="submit" class="generate-button" id="generate-button">
                 <span>Generate Configuration</span>
                 <span class="button-arrow">→</span>
             </button>

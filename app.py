@@ -39,18 +39,7 @@ def network():
     )
     selected_network_type = values["network_type"]
 
-    if (
-        request.method == "POST"
-        and selected_network_type == "cnn"
-        and len(request.form.getlist("network_type")) == 1
-    ):
-        errors.clear()
-        error = (
-            "CNN configuration is under development. "
-            "No configuration was generated. "
-            "Choose Fully Connected to generate a configuration now."
-        )
-    elif request.method == "POST":
+    if request.method == "POST":
         if (
             len(request.form.getlist("network_type")) > 1
             or selected_network_type not in NETWORK_ARCHITECTURES
@@ -82,21 +71,14 @@ def network():
                 errors[field_name] = message
 
         if not errors:
-            if selected_network_type == "cnn":
-                error = (
-                    "CNN configuration is under development. "
-                    "No configuration was generated. "
-                    "Choose Fully Connected to generate a configuration now."
+            try:
+                config = generate_network_config(
+                    **arguments,
+                    **optional_values,
                 )
-            else:
-                try:
-                    config = generate_network_config(
-                        **arguments,
-                        **optional_values,
-                    )
-                    save_config("network", config)
-                except (ValueError, KeyError) as exc:
-                    error = str(exc)
+                save_config("network", config)
+            except (ValueError, KeyError) as exc:
+                error = str(exc)
 
     return render_template(
         "network.html",

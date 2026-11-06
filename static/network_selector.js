@@ -7,14 +7,16 @@ const generateButton = document.getElementById("generate-button");
 function updateNetworkType() {
     const isFullyConnected = networkType.value === "fully_connected";
     const isCnn = networkType.value === "cnn";
-    fullyConnectedFields.hidden = !isFullyConnected;
-    fullyConnectedFields.disabled = !isFullyConnected;
-    // These draft fields have no browser validation; keep them enabled so FC POSTs retain their values.
+    const isSupported = isFullyConnected || isCnn;
+    // CNNs also use a dense stack after global max pooling.
+    fullyConnectedFields.hidden = !isSupported;
+    fullyConnectedFields.disabled = !isSupported;
+    // Retain CNN values when switching back to FC; the backend ignores them for FC.
     cnnFields.hidden = !isCnn;
     cnnStatus.hidden = !isCnn;
-    generateButton.disabled = !isFullyConnected;
-    document.getElementById("input_shape").required = isFullyConnected;
-    document.getElementById("output_shape").required = isFullyConnected;
+    generateButton.disabled = !isSupported;
+    document.getElementById("input_shape").required = isSupported;
+    document.getElementById("output_shape").required = isSupported;
     document.getElementById("fc-input-help").hidden = !isFullyConnected;
     document.getElementById("cnn-input-help").hidden = !isCnn;
     document.getElementById("input_shape").placeholder = isCnn ? "e.g. 128, 128, 3" : "e.g. 34";

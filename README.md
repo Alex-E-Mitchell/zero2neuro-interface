@@ -36,7 +36,7 @@ The interface is intended to remain separate from the core Zero2Neuro codebase. 
 
 ## Current Prototype
 
-The current prototype implements the first end-to-end vertical slice of the interface: **Fully Connected Network Configuration**.
+The current prototype implements the first end-to-end vertical slice of the interface: **Fully Connected and CNN Network Configuration**.
 
 A user can open the local web application, enter basic network settings, and generate Zero2Neuro-compatible network configuration text.
 
@@ -133,16 +133,14 @@ followed by the next option, with no blank value lines. This explicitly supplies
 
 `python/config_rules.py` contains initial `fully_connected` and `cnn` architecture
 entries with required/optional argument sets. The generator uses a generic
-registry-based presence check; value validation remains separate. CNN is a
-registry prototype only; this update does not add CNN form controls or generation.
+registry-based presence check; value validation remains separate. CNN generation
+supports the existing convolution fields, matching layer lists, and spatial-size checks.
 
-The registry is based on the local Zero2Neuro checkout's `src/parser.py` and
-`src/network_builder.py` at commit `55638d7eab68e8dc1a173af15f567ba607a383d2`,
-plus the local `keras3_tools/src/cnn_tools.py`. Explicit input/output shapes are
-interface policy, since argparse supplies defaults. CNN filter, kernel, and
-pooling lists are provisional requirements based on their use by the builder;
-their lengths and conditional shape rules need mentor review. The registry covers
-a small network subset, not all upstream arguments or model-loading modes.
+CNN rules were verified against current upstream Zero2Neuro v0.11.4 and
+keras3_tools v0.2.1. See [CNN configuration notes](docs/CNN_CONFIGURATION.md) for
+source links, validation rules, documentation discrepancies, assumptions, test
+results, and remaining manual verification. Generated CNNs have not been built
+or trained against real Zero2Neuro.
 
 `python/parser_metadata.py` provides `extract_argument_metadata(parser)`. Pass an
 existing `argparse.ArgumentParser`, for example the result of Zero2Neuro's
@@ -245,13 +243,14 @@ in a web browser.
 From the repository root:
 
 ```powershell
-python -m unittest discover -s python/tests
+pytest -q
 ```
 
-A successful test run should end with:
+Install the test runner with `pip install pytest pytest-subtests` if needed.
+Run the current JavaScript tests with:
 
-```text
-OK
+```powershell
+node --test python/tests/network_selector.test.js python/tests/dropout_validation.test.js
 ```
 
 The tests cover shape/hidden-layer validation, exact configuration output, Flask
