@@ -85,7 +85,9 @@ The interface also includes:
 
 The Experiment page at `/experiment` supports experiment name, loss, optional
 metrics, learning rate, epochs and early stopping settings. Submissions are
-validated on the server and produce configuration text with a Copy Config button.
+validated on the server and produce configuration text with Copy Config and
+Download .txt controls. The download saves the generated settings as `experiment.txt`
+using the same export route as the Review page.
 Invalid submissions preserve entered values and show field-specific feedback.
 
 See [Experiment page notes](docs/EXPERIMENT_PAGE.md) for supported choices,
