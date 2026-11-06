@@ -327,7 +327,7 @@ class TestNetworkForm(unittest.TestCase):
         self.assertIn('name="network_type"', first_section)
         self.assertEqual(len(re.findall(r'<section\b', page)), page.count("</section>"))
 
-    def test_cnn_rejected_before_parsing_or_generation(self):
+    def test_incomplete_cnn_rejected_before_generation(self):
         cases = (
             {"network_type": "cnn"},
             dict(self.fields, network_type="cnn"),
@@ -338,19 +338,19 @@ class TestNetworkForm(unittest.TestCase):
                 response = self.client.post("/", data=fields)
                 self.assertEqual(response.status_code, 200)
                 page = response.get_data(as_text=True)
-                self.assertIn("CNN configuration is under development", page)
-                self.assertIn("No configuration was generated", page)
+                self.assertIn('id="form-errors"', page)
+                self.assertNotIn("under development", page)
                 self.assertIn('value="cnn" selected', page)
-                self.assertIn('id="fully-connected-fields" hidden disabled', page)
+                self.assertNotIn('id="fully-connected-fields" hidden disabled', page)
                 self.assertNotIn('id="cnn-status" role="status" hidden', page)
                 cnn_fields = re.search(r'<fieldset[^>]*id="cnn-fields"[^>]*>', page).group()
                 self.assertNotIn("hidden", cnn_fields)
                 self.assertNotIn("disabled", cnn_fields)
-                self.assertIn('id="generate-button" disabled', page)
+                self.assertNotIn('id="generate-button" disabled', page)
                 self.assertNotIn('id="config-text"', page)
                 for name in ("input_shape", "output_shape"):
                     tag = re.search(r'<input[^>]*name="' + name + r'"[^>]*>', page).group()
-                    self.assertNotIn("required", tag)
+                    self.assertIn("required", tag)
                     self.assertNotIn("hidden", tag)
                 generate.assert_not_called()
 
@@ -372,9 +372,9 @@ class TestNetworkForm(unittest.TestCase):
         self.assertIn('value="valid" selected', fields)
         self.assertIn('value="elu" selected', fields)
         self.assertIn("0 skips pooling", fields)
-        self.assertIn("not validated yet", fields)
+        self.assertIn("same number of layers", fields)
 
-    def test_cnn_draft_state_preserved_without_validation_or_generation(self):
+    def test_cnn_values_preserved_and_ignored_for_fc(self):
         draft = dict(input_shape="128, 128, 3", conv_number_filters="8, 16",
                      conv_kernel_size="3, 3", conv_pool_size="0, 2",
                      conv_padding="same", conv_activation="relu")
@@ -395,8 +395,8 @@ class TestNetworkForm(unittest.TestCase):
                 self.assertEqual('id="config-text"' in page, architecture == "fully_connected" and shape == "34")
                 if architecture == "cnn":
                     self.assertIn('placeholder="e.g. 128, 128, 3"', page)
-                    self.assertIn("CNN configuration generation and validation are under development", page)
-                    self.assertIn('id="generate-button" disabled', page)
+                    self.assertIn('href="#conv_kernel_size"', page)
+                    self.assertNotIn('id="generate-button" disabled', page)
                     self.assertNotIn("exactly one positive integer, such as 34 (the number of input features)", page)
 
     def test_cnn_draft_text_is_escaped(self):

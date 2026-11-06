@@ -43,15 +43,15 @@ function page(initialType, includeResult = true) {
 }
 
 function assertMode(elements, isFullyConnected) {
-    assert.equal(elements["fully-connected-fields"].hidden, !isFullyConnected);
-    assert.equal(elements["fully-connected-fields"].disabled, !isFullyConnected);
+    assert.equal(elements["fully-connected-fields"].hidden, false);
+    assert.equal(elements["fully-connected-fields"].disabled, false);
     assert.equal(elements["cnn-fields"].hidden, isFullyConnected);
     assert.equal(elements["cnn-status"].hidden, isFullyConnected);
     // Hidden CNN draft values are submitted with FC forms, so an error does not erase them.
     assert.equal(elements["cnn-fields"].disabled, false);
-    assert.equal(elements["generate-button"].disabled, !isFullyConnected);
-    assert.equal(elements.input_shape.required, isFullyConnected);
-    assert.equal(elements.output_shape.required, isFullyConnected);
+    assert.equal(elements["generate-button"].disabled, false);
+    assert.equal(elements.input_shape.required, true);
+    assert.equal(elements.output_shape.required, true);
     assert.equal(elements.input_shape.hidden, false);
     assert.equal(elements.output_shape.hidden, false);
     assert.equal(elements["fc-input-help"].hidden, !isFullyConnected);

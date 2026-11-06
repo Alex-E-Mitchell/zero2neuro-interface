@@ -5,7 +5,7 @@ option. Keep generation and underlying network rules in their existing modules.
 """
 
 from config_generator import parse_integer_list, validate_hidden_units, validate_shape
-from config_rules import ACTIVATION_CHOICES
+from config_rules import ACTIVATION_CHOICES, CNN_LIST_MINIMUMS, CNN_CHOICES, validate_cnn_arguments
 
 SELECT_FIELDS = {
     "network_type": {
@@ -41,6 +41,21 @@ INTEGER_FIELDS = {
 }
 CHECKBOX_FIELDS = ("batch_normalization", "batch_normalization_input")
 
+CNN_LABELS = {
+    "conv_number_filters": "Filters per Layer",
+    "conv_kernel_size": "Kernel Sizes per Layer",
+    "conv_pool_size": "Max-Pooling Sizes per Layer",
+}
+for name, choices in CNN_CHOICES.items():
+    SELECT_FIELDS[name] = {
+        "label": "Convolution Padding" if name == "conv_padding" else "Convolution Activation",
+        "default": choices[0],
+        "choices": tuple((value, {
+            "valid": "Valid (no added border)", "same": "Same (add border zeros)",
+            "elu": "ELU", "relu": "ReLU", "sigmoid": "Sigmoid", "tanh": "Tanh",
+        }[value]) for value in choices),
+    }
+
 
 def prepare_network_form(submitted=None):
     """Return display values, parsed generator arguments, and field errors.
@@ -53,6 +68,7 @@ def prepare_network_form(submitted=None):
     values = {name: "" for name in INTEGER_FIELDS}
     values.update({name: field["default"] for name, field in SELECT_FIELDS.items()})
     values.update({name: False for name in CHECKBOX_FIELDS})
+    values.update({name: "" for name in CNN_LIST_MINIMUMS})
     parsed, errors = {}, {}
     if submitted is None:
         return values, parsed, errors
@@ -75,7 +91,12 @@ def prepare_network_form(submitted=None):
                 errors[name] += " Leave blank for zero hidden layers."
 
     for name, field in SELECT_FIELDS.items():
+        if name in CNN_CHOICES and submitted.get("network_type") != "cnn":
+            values[name] = submitted.get(name, field["default"])
+            continue
         default = field["default"] if name == "network_type" else ""
+        if name in CNN_CHOICES:
+            default = field["default"]
         values[name] = submitted.get(name, default)
         if values[name] not in dict(field["choices"]):
             errors[name] = f"Choose a supported {field['label'].lower()} from the list."
@@ -85,5 +106,16 @@ def prepare_network_form(submitted=None):
     for name in CHECKBOX_FIELDS:
         values[name] = name in submitted
         parsed[name] = values[name]
+
+    for name in CNN_LIST_MINIMUMS:
+        values[name] = submitted.get(name, "")
+        if values["network_type"] == "cnn":
+            try:
+                parsed[name] = parse_integer_list(values[name], CNN_LABELS[name])
+            except ValueError as exc:
+                errors[name] = str(exc)
+    if values["network_type"] == "cnn":
+        for name, message in validate_cnn_arguments(parsed.get("input_shape"), parsed).items():
+            errors.setdefault(name, message)
 
     return values, parsed, errors

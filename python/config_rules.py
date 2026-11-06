@@ -11,10 +11,8 @@ catalog of training, tokenizer, plugin, or model-loading options.
 
 Required shapes are interface policy: require explicit sizes rather than silently
 use parser defaults [10]. Activations have defaults and hidden layers may be empty.
-CNN requirements are provisional: the builder passes None defaults through to a
-stack that calls len/zip on filters, kernels, and pooling. Pooling entries can be 0
-to disable pooling. Length relationships and conditional dimensions need mentor
-review before adding a CNN UI. No CNN semantic validation is implemented here.
+CNN rules follow upstream release v0.11.4 and keras3_tools v0.2.1.
+See docs/CNN_CONFIGURATION.md for source revisions, interface policies, and gaps.
 """
 import math
 
@@ -30,6 +28,61 @@ ACTIVATION_CHOICES = {
     "output_activation": ("elup1", "linear", "sigmoid", "softmax"),
 }
 ACTIVATION_RULES = {"required": set(ACTIVATION_CHOICES), "choices": ACTIVATION_CHOICES}
+
+CNN_LIST_MINIMUMS = {
+    "conv_number_filters": 1, "conv_kernel_size": 1, "conv_pool_size": 0,
+}
+CNN_CHOICES = {
+    "conv_padding": ("valid", "same"),
+    "conv_activation": ("elu", "relu", "sigmoid", "tanh"),
+}
+
+
+def validate_cnn_arguments(input_shape, arguments):
+    """Return field errors for the supported channels-last CNN subset.
+
+    Equal nonempty lists are interface policy: upstream zip silently truncates.
+    Stride is 1, average pooling is omitted, and max pooling uses its size as stride.
+    """
+    errors = {}
+    if (not isinstance(input_shape, list) or len(input_shape) not in (2, 3, 4)
+            or any(type(d) is not int or d <= 0 for d in input_shape)):
+        errors["input_shape"] = (
+            "CNN input shape must contain 2, 3, or 4 positive integers: "
+            "spatial dimensions followed by channels, without batch size."
+        )
+    for name, minimum in CNN_LIST_MINIMUMS.items():
+        values = arguments.get(name)
+        if (not isinstance(values, list) or not values
+                or any(type(v) is not int or v < minimum for v in values)):
+            errors[name] = f"{name} must be a non-empty list of integers at least {minimum}."
+    for name, choices in CNN_CHOICES.items():
+        if arguments.get(name) not in choices:
+            errors[name] = f"{name} must be one of: {', '.join(choices)}."
+    if any(name in errors for name in CNN_LIST_MINIMUMS):
+        return errors
+    if len({len(arguments[name]) for name in CNN_LIST_MINIMUMS}) != 1:
+        for name in CNN_LIST_MINIMUMS:
+            errors[name] = "Filters, kernel sizes, and max-pooling sizes must have the same number of layers."
+    if errors:
+        return errors
+
+    spatial = input_shape[:-1]
+    for layer, (kernel, pool) in enumerate(zip(
+            arguments["conv_kernel_size"], arguments["conv_pool_size"]), start=1):
+        if arguments["conv_padding"] == "valid":
+            spatial = [d - kernel + 1 for d in spatial]
+            if any(d <= 0 for d in spatial):
+                errors["conv_kernel_size"] = f"Convolution layer {layer} leaves no spatial cells; reduce its kernel size or use same padding."
+                break
+        if pool > 1:
+            spatial = ([(d + pool - 1) // pool for d in spatial]
+                       if arguments["conv_padding"] == "same"
+                       else [d // pool for d in spatial])
+            if any(d <= 0 for d in spatial):
+                errors["conv_pool_size"] = f"Max pooling at layer {layer} leaves no spatial cells; reduce its size or use same padding."
+                break
+    return errors
 
 # Zero2Neuro's optional float coefficients default to None; Keras requires
 # finite, non-negative values and does not impose an upper bound.
