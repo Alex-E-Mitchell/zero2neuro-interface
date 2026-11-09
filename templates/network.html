@@ -64,8 +64,12 @@
             </section>
 
             {# Hidden CNN values are retained on FC POSTs and ignored by its generator. #}
-            <fieldset class="config-section" id="cnn-fields"{% if selected_network_type != 'cnn' %} hidden{% endif %}>
-                <legend>CNN Convolution Layers</legend>
+            <section class="config-section" id="cnn-fields"{% if selected_network_type != 'cnn' %} hidden{% endif %}>
+                <div class="section-heading">
+                    <div>
+                        <h2>CNN Convolution Layers</h2>
+                    </div>
+                </div>
                 <p>Each position in the lists describes the same layer. For two layers, try filters 8, 16;
                     kernel sizes 3, 3; and max-pooling sizes 0, 2. All three lists must be non-empty and have the same number of layers.</p>
 
@@ -141,7 +145,7 @@
                     </select>
                     {{ field_error("conv_activation", errors) }}
                 </div>
-            </fieldset>
+            </section>
 
             <fieldset class="config-section" id="fully-connected-fields"{% if selected_network_type not in ('fully_connected', 'cnn') %} hidden disabled{% endif %}>
                 <div class="section-heading">

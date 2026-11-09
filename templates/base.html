@@ -11,14 +11,15 @@
     <div class="background-grid" aria-hidden="true"></div>
     <main class="container">
         <header class="page-header">
-            <div class="eyebrow">NEURAL NETWORK CONFIGURATION</div>
+            <div class="masthead-meta"><span class="brand-symbol" aria-hidden="true"><span></span><span></span><span></span><span></span></span><span class="eyebrow">SYMBIOTIC COMPUTING / CONFIGURATION WORKSPACE</span><span class="edition-label">INTERFACE / 01</span></div>
             <div class="title-row">
                 <div>
                     <h1>Zero2Neuro</h1>
-                    <p class="title-subline">Build your experiment configuration</p>
+                    <p class="title-subline">Neural network configuration studio</p>
                 </div>
             </div>
         </header>
+        <div class="workspace-label"><span class="workspace-indicator" aria-hidden="true"></span> WORKSPACE <span class="workspace-separator">/</span> MODEL SETUP <span class="workspace-separator">/</span> CONFIGURATION FILES</div>
         <nav class="page-navigation" aria-label="Configuration pages">
             {% for endpoint, label in [('network', 'Network'), ('data', 'Data'), ('experiment', 'Experiment'), ('review', 'Review')] %}
             <a href="{{ url_for(endpoint) }}"{% if request.endpoint == endpoint %} aria-current="page"{% endif %}>
@@ -33,6 +34,7 @@
             </div>
             {% block content %}{% endblock %}
         </section>
+        <footer class="site-footer"><span>ZERO2NEURO <span class="footer-dot">●</span> CONFIGURATION WORKSPACE</span><span>BUILD WITH PRECISION &nbsp;·&nbsp; VERIFY WITH CONFIDENCE</span></footer>
     </main>
     {% block scripts %}{% endblock %}
 </body>
