@@ -4,7 +4,7 @@
 {% block heading %}Experiment Configuration{% endblock %}
 {% block description %}Choose how your model will train and measure its performance. Generate configuration text to use with your Network and Data settings.{% endblock %}
 {% block content %}
-{{ error_summary(errors) }}
+{{ error_summary(errors, error) }}
 <form method="POST" novalidate>
     <section class="config-section">
         <div class="section-heading">
