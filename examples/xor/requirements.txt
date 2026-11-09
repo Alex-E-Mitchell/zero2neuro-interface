@@ -1,0 +1,13 @@
+# Separate training environment: Python 3.12 recommended.
+tensorflow==2.18.0
+keras==3.10.0
+numpy==2.0.2
+scikit-learn==1.6.1
+pandas==2.2.3
+matplotlib==3.10.3
+Pillow==11.2.1
+charset-normalizer==3.4.2
+wandb==0.19.11
+pydot==4.0.0
+openpyxl==3.1.5
+xlsxwriter==3.3.1

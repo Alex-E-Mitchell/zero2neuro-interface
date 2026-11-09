@@ -301,3 +301,11 @@ Training / Evaluation / Results
 ```
 
 The current required goal is to make Zero2Neuro configuration easier for beginners. Directly launching Zero2Neuro experiments from the GUI may be explored later, but it is not required for the initial configuration-generation workflow.
+
+## Verify exported files with XOR training
+
+The [XOR walkthrough](examples/xor/README.md) shows how to generate Network, Data,
+and Experiment files in the interface, run them through Zero2Neuro in a separate
+training environment, and check the saved model's predictions. It includes a
+four-row dataset, reference configurations, and a repeatable verification script.
+Training runs outside the web app; the example does not add a training button.

@@ -18,3 +18,8 @@ java/target/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local XOR training setup and run outputs
+.xor-runtime/
+.xor-venv/
+xor-runs/

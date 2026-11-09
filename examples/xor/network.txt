@@ -1,0 +1,9 @@
+--network_type=fully_connected
+--input_shape
+2
+--number_hidden_units
+4
+--hidden_activation=tanh
+--output_shape
+1
+--output_activation=sigmoid
