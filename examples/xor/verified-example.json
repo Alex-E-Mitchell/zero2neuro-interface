@@ -1,0 +1,52 @@
+{
+  "description": "Local verification on Apple Silicon macOS, November 6, 2026. Training-set results only.",
+  "zero2neuro_commit": "55638d7eab68e8dc1a173af15f567ba607a383d2",
+  "keras3_tools_commit": "c7d63be937a6889fd5b2b4cfe9caa34e0c715f95",
+  "seed": 42,
+  "config_sha256": {
+    "network.txt": "08f88cbbdd0034952ff57013a479d1594697d4c5efeec35efb08d915ea9c76be",
+    "data.txt": "1db51863545913f8968014f68547ee2bbe9c09289f89c8998ca0c982a4b532c9",
+    "experiment.txt": "2461dfd406c9a25d97ed1d4c662229527606b02dd043ff25cadfc16adf993cf7"
+  },
+  "correct": 4,
+  "total": 4,
+  "mse": 0.0011196540574730527,
+  "predictions": [
+    {
+      "inputs": [
+        0.0,
+        0.0
+      ],
+      "expected": 0,
+      "prediction": 0.019136128947138786,
+      "class_at_0_5": 0
+    },
+    {
+      "inputs": [
+        0.0,
+        1.0
+      ],
+      "expected": 1,
+      "prediction": 0.9562456607818604,
+      "class_at_0_5": 1
+    },
+    {
+      "inputs": [
+        1.0,
+        0.0
+      ],
+      "expected": 1,
+      "prediction": 0.9833125472068787,
+      "class_at_0_5": 1
+    },
+    {
+      "inputs": [
+        1.0,
+        1.0
+      ],
+      "expected": 0,
+      "prediction": 0.04381223022937775,
+      "class_at_0_5": 0
+    }
+  ]
+}
