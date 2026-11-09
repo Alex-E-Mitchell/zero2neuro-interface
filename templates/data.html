@@ -9,7 +9,7 @@
         {% set current_set_type = form.get('data_set_type', 'fixed') %}
         {% set current_format = form.get('data_format', 'tabular') %}
 
-        <form method="POST" id="data-form"
+        <form method="POST" id="data-form" data-draft-key="data"
             data-fold-split-rules='{{ fold_split_rules|tojson }}'
             data-set-type-help='{{ set_type_help|tojson }}'
             data-format-help='{{ format_help|tojson }}'>
@@ -212,6 +212,9 @@
                 </div>
             </section>
 
+            <div class="configuration-actions">
+                <button type="button" class="clear-inputs-button" data-clear-inputs>Clear Inputs</button>
+            </div>
             <button type="submit" class="generate-button">
                 <span>Generate Configuration</span>
                 <span class="button-arrow">→</span>

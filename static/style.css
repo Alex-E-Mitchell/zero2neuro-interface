@@ -72,6 +72,10 @@ textarea {min-height:110px;resize:vertical;}
 .checkbox-row .info-button{margin-left:2px;}
 .checkbox-group {margin-top:15px;}
 button {font-family:inherit;}
+.configuration-actions {display:flex;justify-content:flex-end;margin:19px 0 11px;}
+.clear-inputs-button {min-height:38px;padding:8px 15px;border:1px solid #cbd9e1;border-radius:5px;background:#fff;color:#516778;font-weight:600;font-size:13px;cursor:pointer;transition:background .15s,border-color .15s,color .15s;}
+.clear-inputs-button:hover {background:#eef4f7;border-color:#9fb7c5;color:#274558;}
+.clear-inputs-button:focus-visible {outline:2px solid #196b91;outline-offset:2px;}
 .generate-button { display:flex;justify-content:center;align-items:center;gap:18px;width:100%;min-height:51px;padding:14px 22px;border:1px solid #1d6688;border-radius:5px;color:#fff;background:#196b91;font-weight:700;font-size:14px;letter-spacing:.015em;cursor:pointer;transition:background .15s,transform .15s,box-shadow .15s; }
 .generate-button:hover { background:#145b7d;box-shadow:0 7px 18px rgba(26,103,145,.13);transform:translateY(-1px); }
 .generate-button:active {transform:translateY(0);}
