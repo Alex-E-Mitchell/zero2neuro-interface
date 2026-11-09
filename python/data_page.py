@@ -2,6 +2,7 @@ from flask import render_template, request
 from config_store import save_config, clear_config
 from data_generator import generate_data_config, parse_lines, parse_optional_int
 from data_rules import DATA_FORMATS, FOLD_SPLITS, SET_TYPES
+from parser_validator import validate_config
 
 def data():
     config = None
@@ -23,7 +24,14 @@ def data():
                 data_groups=form.get("data_groups", ""),
                 data_stratify=form.get("data_stratify", ""),
             )
-            save_config("data", config)
+            validation = validate_config(config)
+
+            if validation["status"] == "invalid":
+                error = validation["message"]
+                config = None
+            else:
+                # Save if valid, or if the parser is unavailable.
+                save_config("data", config)
         except ValueError as exc:
             error = str(exc)
 

@@ -7,6 +7,7 @@ from flask import Flask, render_template, request
 sys.path.insert(0, str(Path(__file__).resolve().parent / "python"))
 
 from config_generator import generate_network_config
+from parser_validator import validate_config
 from config_store import save_config, clear_config
 from config_rules import (
     NETWORK_ARCHITECTURES,
@@ -76,7 +77,16 @@ def network():
                     **arguments,
                     **optional_values,
                 )
-                save_config("network", config)
+
+                validation = validate_config(config)
+                if validation["status"] == "invalid":
+                    error = validation["message"]
+                    config = None
+                else:
+                    # Save when valid, or when parser validation
+                    # is unavailable and existing checks passed.
+                    save_config("network", config)
+
             except (ValueError, KeyError) as exc:
                 error = str(exc)
 

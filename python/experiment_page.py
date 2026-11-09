@@ -2,6 +2,7 @@
 
 from flask import render_template, request
 from config_store import save_config, clear_config
+from parser_validator import validate_config
 
 from experiment_generator import (
     DEFAULT_VALUES, LOSS_CHOICES, METRIC_CHOICES, MONITOR_CHOICES,
@@ -62,12 +63,19 @@ def experiment():
     )
 
     config = None
+    error = None
     if request.method == "POST" and not errors:
         config = generate_experiment_config(arguments)
-        save_config("experiment", config)
+        validation = validate_config(config)
+        if validation["status"] == "invalid":
+            error = validation["message"]
+            config = None
+        else:
+            # Save if valid, or if parser validation is unavailable.
+            save_config("experiment", config)
 
     return render_template(
-        "experiment.html", values=values, errors=errors, config=config,
+        "experiment.html", values=values, errors=errors, error=error, config=config,
         loss_choices=LOSS_CHOICES, metric_choices=METRIC_CHOICES,
         monitor_choices=MONITOR_CHOICES,
     )
