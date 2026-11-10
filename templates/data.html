@@ -8,24 +8,27 @@
         {% set split_rule = fold_split_rules.get(current_split, fold_split_rules['identity']) %}
         {% set current_set_type = form.get('data_set_type', 'fixed') %}
         {% set current_format = form.get('data_format', 'tabular') %}
+        {% set current_representation = form.get('representation', 'numpy') %}
+        {% set current_cache_mode = form.get('tf_cache_mode', 'none') %}
 
         <form method="POST" id="data-form" data-draft-key="data"
             data-fold-split-rules='{{ fold_split_rules|tojson }}'
-            data-set-type-help='{{ set_type_help|tojson }}'
-            data-format-help='{{ format_help|tojson }}'>
+            data-set-type-rules='{{ set_type_rules|tojson }}'
+            data-format-rules='{{ format_rules|tojson }}'
+            data-representation-rules='{{ representation_rules|tojson }}'>
 
             <section class="config-section">
                 <div class="section-heading">
                     <span class="section-number">01</span>
                     <div>
-                        <h2>Data Source</h2>
+                        <h2>File Loader</h2>
                         <p>Tell Zero2Neuro what kind of file you have and where to find it.</p>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <div class="label-row">
-                        <label for="data_format">File Format</label>
+                        <label for="data_format">Data Format</label>
 
                         <button type="button" class="info-button" aria-label="About file format">
                             i
@@ -40,12 +43,12 @@
                         <option value="{{ key }}" {% if current_format == key %}selected{% endif %}>{{ rule.label }}</option>
                         {% endfor %}
                     </select>
-                    <p class="field-hint" id="data_format_help">{{ format_help.get(current_format, '') }}</p>
+                    <p class="field-hint" id="data_format_help">{{ format_rules.get(current_format, {}).get('help', '') }}</p>
                 </div>
 
                 <div class="form-group">
                     <div class="label-row">
-                        <label for="data_directory">Data Directory (optional)</label>
+                        <label for="data_directory">Data File Location (optional)</label>
 
                         <button type="button" class="info-button" aria-label="About data directory">
                             i
@@ -81,15 +84,14 @@
                 <div class="section-heading">
                     <span class="section-number">02</span>
                     <div>
-                        <h2>Columns</h2>
-                        <p>Choose which columns the model reads and which it should predict.</p>
+                        <h2>Selecting Fields from Files</h2>
+                        <p>Choose which fields (columns) the model reads and which it should predict.</p>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <div class="label-row">
-                        <label for="data_inputs">Input Columns</label>
-
+                        <label for="data_inputs">Data Inputs</label>
                         <button type="button" class="info-button" aria-label="About input columns">
                             i
                             <span class="tooltip">
@@ -98,13 +100,12 @@
                         </button>
                     </div>
 
-                    <textarea id="data_inputs" name="data_inputs" placeholder="One column name per line, e.g.&#10;In 0&#10;In 1" required>{{ form.get('data_inputs', '') }}</textarea>
+                    <textarea id="data_inputs" name="data_inputs" placeholder="One column name per line, e.g.&#10;In 0&#10;In 1">{{ form.get('data_inputs', '') }}</textarea>
                 </div>
 
                 <div class="form-group">
                     <div class="label-row">
-                        <label for="data_outputs">Output Columns</label>
-
+                        <label for="data_outputs">Data Outputs</label>
                         <button type="button" class="info-button" aria-label="About output columns">
                             i
                             <span class="tooltip">
@@ -113,22 +114,111 @@
                         </button>
                     </div>
 
-                    <textarea id="data_outputs" name="data_outputs" placeholder="One column name per line, e.g.&#10;Out 0" required>{{ form.get('data_outputs', '') }}</textarea>
+                    <textarea id="data_outputs" name="data_outputs" placeholder="One column name per line, e.g.&#10;Out 0">{{ form.get('data_outputs', '') }}</textarea>
                 </div>
+
+                <div class="form-group" >
+                    <div class="label-row">
+                        <label for="data_weights">Data Weights (optional)</label>
+                        <button type="button" class="info-button" aria-label="About weight column (optional)">
+                            i
+                            <span class="tooltip">
+                                A column holding a number (0 or more) for each example. A bigger number tells the model that example is more important.
+                            </span>
+                        </button>
+                    </div>
+
+                    <input type="text" id="data_weights" name="data_weights" placeholder="e.g. weight" value="{{ form.get('data_weights', '') }}">
+                </div>
+
+                <div class="form-group" >
+                    <div class="label-row">
+                        <label for="tag_examples">Data Tag Examples (optional)</label>
+                        <button type="button" class="info-button" aria-label="About tag columns (optional)">
+                            i
+                            <span class="tooltip">
+                                Extra columns to carry along with each example. They are saved in the results file so you can tell which example is which. They are not used for training.
+                            </span>
+                        </button>
+                    </div>
+
+                    <textarea id="tag_examples" name="tag_examples" placeholder="One column name per line, e.g.&#10;subject_id">{{ form.get('tag_examples', '') }}</textarea>
+                </div>
+
+                <details class="advanced-table" data-format-option="tabular_options" hidden {% if form.get('tabular_header_row') or form.get('tabular_header_names') or form.get('tabular_column_range') or form.get('tabular_column_list') %}open{% endif %}>
+                    <summary>Tabular File Options</summary>
+                    <p class="field-hint">Use these only if your table is not a plain grid with the column names in the first row. Leave them blank otherwise.</p>
+
+                <div class="form-group" >
+                    <div class="label-row">
+                        <label for="tabular_header_row">Header Row</label>
+                        <button type="button" class="info-button" aria-label="About header row">
+                            i
+                            <span class="tooltip">
+                                The row that holds the column names. Leave blank if the names are in the first row.
+                            </span>
+                        </button>
+                    </div>
+
+                    <input type="number" id="tabular_header_row" name="tabular_header_row" min="0" step="1" placeholder="e.g. 2" value="{{ form.get('tabular_header_row', '') }}">
+                </div>
+
+                <div class="form-group" >
+                    <div class="label-row">
+                        <label for="tabular_header_names">Header Names</label>
+                        <button type="button" class="info-button" aria-label="About header names">
+                            i
+                            <span class="tooltip">
+                                Use this if the file has no header row. Type the column names yourself, one per line, in the order the columns appear. Do not combine with a header row.
+                            </span>
+                        </button>
+                    </div>
+
+                    <textarea id="tabular_header_names" name="tabular_header_names" placeholder="One name per line, e.g.&#10;In 0&#10;In 1&#10;Out 0">{{ form.get('tabular_header_names', '') }}</textarea>
+                </div>
+
+                <div class="form-group" >
+                    <div class="label-row">
+                        <label for="tabular_column_range">Tabular Column Range</label>
+                        <button type="button" class="info-button" aria-label="About column range">
+                            i
+                            <span class="tooltip">
+                                Only read a block of columns. Give the first and last column number, such as 2 5 to use columns 2, 3, 4 and 5.
+                            </span>
+                        </button>
+                    </div>
+
+                    <input type="text" id="tabular_column_range" name="tabular_column_range" placeholder="e.g. 2 5" value="{{ form.get('tabular_column_range', '') }}">
+                </div>
+
+                <div class="form-group" >
+                    <div class="label-row">
+                        <label for="tabular_column_list">Tabular Column List</label>
+                        <button type="button" class="info-button" aria-label="About column list">
+                            i
+                            <span class="tooltip">
+                                Only read these specific columns. Give the column numbers separated by spaces. Do not combine with a column range.
+                            </span>
+                        </button>
+                    </div>
+
+                    <input type="text" id="tabular_column_list" name="tabular_column_list" placeholder="e.g. 0 1 4" value="{{ form.get('tabular_column_list', '') }}">
+                </div>
+                </details>
             </section>
 
             <section class="config-section">
                 <div class="section-heading">
                     <span class="section-number">03</span>
                     <div>
-                        <h2>Dataset Splitting</h2>
+                        <h2>Data Files to Data Sets</h2>
                         <p>Decide how examples are divided into folds, then how folds become training, validation, and testing sets.</p>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <div class="label-row">
-                        <label for="data_fold_split">How are examples divided into folds?</label>
+                        <label for="data_fold_split">Fold Generator</label>
 
                         <button type="button" class="info-button" aria-label="About fold split">
                             i
@@ -163,7 +253,7 @@
 
                 <div class="form-group" data-requires-option="data_groups" {% if 'data_groups' not in split_rule.requires %}hidden{% endif %}>
                     <div class="label-row">
-                        <label for="data_groups">Group Column</label>
+                        <label for="data_groups">Data Groups (optional)</label>
 
                         <button type="button" class="info-button" aria-label="About group column">
                             i
@@ -193,7 +283,7 @@
 
                 <div class="form-group">
                     <div class="label-row">
-                        <label for="data_set_type">How are folds used?</label>
+                        <label for="data_set_type">Data Set Generator</label>
 
                         <button type="button" class="info-button" aria-label="About dataset split type">
                             i
@@ -208,7 +298,126 @@
                         <option value="{{ key }}" {% if current_set_type == key %}selected{% endif %}>{{ rule.label }}</option>
                         {% endfor %}
                     </select>
-                    <p class="field-hint" id="data_set_type_help">{{ set_type_help.get(current_set_type, '') }}</p>
+                    <p class="field-hint" id="data_set_type_help">{{ set_type_rules.get(current_set_type, {}).get('help', '') }}</p>
+                </div>
+
+                <div class="notice-box" id="cv_notice" hidden></div>
+
+                <div class="form-group" data-set-type-option="cross_validation" hidden>
+                    <div class="label-row">
+                        <label for="data_rotation">Rotation</label>
+                        <button type="button" class="info-button" aria-label="About rotation">
+                            i
+                            <span class="tooltip">
+                                Which rotation of the folds to use, counting from 0. Holistic cross-validation has one rotation per fold; Hold-Out has one fewer, because the last fold is always the test set. Each rotation picks a different fold to test on, so a full cross-validation runs once per rotation.
+                            </span>
+                        </button>
+                    </div>
+
+                    <input type="number" id="data_rotation" name="data_rotation" min="0" step="1" placeholder="e.g. 0" value="{{ form.get('data_rotation', '0') }}">
+                </div>
+
+                <div class="form-group" data-set-type-option="cross_validation" hidden>
+                    <div class="label-row">
+                        <label for="n_validation_folds">Validation Folds (optional)</label>
+                        <button type="button" class="info-button" aria-label="About validation folds (optional)">
+                            i
+                            <span class="tooltip">
+                                How many folds are used for validation. Leave blank for the default of one fold. A larger validation set can make training more stable when folds are small.
+                            </span>
+                        </button>
+                    </div>
+
+                    <input type="number" id="n_validation_folds" name="n_validation_folds" min="1" step="1" placeholder="1" value="{{ form.get('n_validation_folds', '') }}">
+                </div>
+
+                <div class="form-group" data-set-type-option="cross_validation" hidden>
+                    <div class="label-row">
+                        <label for="n_training_folds">Training Folds (optional)</label>
+                        <button type="button" class="info-button" aria-label="About training folds (optional)">
+                            i
+                            <span class="tooltip">
+                                By default the training set uses every remaining fold (N-2). Set a smaller number to see how sensitive the model is to the size of the training set. Training plus validation folds cannot be more than N-1.
+                            </span>
+                        </button>
+                    </div>
+
+                    <input type="number" id="n_training_folds" name="n_training_folds" min="1" step="1" placeholder="all remaining" value="{{ form.get('n_training_folds', '') }}">
+                </div>
+            </section>
+
+            <section class="config-section">
+                <div class="section-heading">
+                    <span class="section-number">04</span>
+                    <div>
+                        <h2>Internal Data Representation</h2>
+                        <p>Decide how the data is held while the model trains. The default suits most datasets.</p>
+                    </div>
+                </div>
+
+                <div class="form-group" >
+                    <div class="label-row">
+                        <label for="representation">Internal Representation</label>
+                        <button type="button" class="info-button" aria-label="About how is the data held?">
+                            i
+                            <span class="tooltip">
+                                NumPy keeps everything in memory. TF Dataset reads the data in batches and can cache it to disk, which helps with very big datasets.
+                            </span>
+                        </button>
+                    </div>
+
+                    <select id="representation" name="representation">
+                        {% for key, rule in representations.items() %}
+                        <option value="{{ key }}" {% if current_representation == key %}selected{% endif %}>{{ rule.label }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="field-hint" id="representation_help">{{ representation_rules.get(current_representation, {}).get('help', '') }}</p>
+                </div>
+
+                <div class="form-group" data-representation-option="tf_options" hidden>
+                    <div class="label-row">
+                        <label for="tf_cache_mode">Cache</label>
+                        <button type="button" class="info-button" aria-label="About cache">
+                            i
+                            <span class="tooltip">
+                                A cache keeps prepared data so it does not have to be rebuilt every epoch. Disk caching trades speed for memory.
+                            </span>
+                        </button>
+                    </div>
+
+                    <select id="tf_cache_mode" name="tf_cache_mode">
+                        {% for key, label in tf_cache_modes.items() %}
+                        <option value="{{ key }}" {% if current_cache_mode == key %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group" data-cache-disk="true" hidden>
+                    <div class="label-row">
+                        <label for="tf_cache_path">Cache Folder</label>
+                        <button type="button" class="info-button" aria-label="About cache folder">
+                            i
+                            <span class="tooltip">
+                                The folder where cached data is written.
+                            </span>
+                        </button>
+                    </div>
+
+                    <input type="text" id="tf_cache_path" name="tf_cache_path" placeholder="e.g. ./cache" value="{{ form.get('tf_cache_path', '') }}">
+                </div>
+
+                <div class="form-group" data-representation-option="tf_options" hidden>
+                    <div class="label-row">
+                        <label for="batch">Batch Size (optional)</label>
+                        <button type="button" class="info-button" aria-label="About batch size (optional)">
+                            i
+                            <span class="tooltip">
+                                How many examples are processed together. Leave blank for Zero2Neuro's default of 32.
+                            </span>
+                        </button>
+                    </div>
+
+                    <input type="number" id="batch" name="batch" min="1" step="1" placeholder="32" value="{{ form.get('batch', '') }}">
                 </div>
             </section>
 
@@ -254,31 +463,93 @@
         // They are stored on the <form> tag above and read back here.
         const dataForm = document.getElementById("data-form");
         const foldSplitRules = JSON.parse(dataForm.dataset.foldSplitRules);
-        const setTypeHelp = JSON.parse(dataForm.dataset.setTypeHelp);
-        const formatHelp = JSON.parse(dataForm.dataset.formatHelp);
+        const setTypeRules = JSON.parse(dataForm.dataset.setTypeRules);
+        const formatRules = JSON.parse(dataForm.dataset.formatRules);
+        const representationRules = JSON.parse(dataForm.dataset.representationRules);
+
+        function value(id) { return document.getElementById(id).value; }
+
+        // Show a group and turn its fields on or off together, so hidden
+        // fields are never submitted or required.
+        function toggle(group, show) {
+            group.hidden = !show;
+            group.querySelectorAll("input, textarea, select").forEach(function (field) {
+                field.disabled = !show;
+            });
+        }
 
         function syncDataForm() {
-            const split = foldSplitRules[document.getElementById("data_fold_split").value];
+            const format = formatRules[value("data_format")] || {};
+            const setType = setTypeRules[value("data_set_type")] || {};
+
+            // Formats can rule out some fold splits (tf-dataset has no random split).
+            const splitSelect = document.getElementById("data_fold_split");
+            Array.from(splitSelect.options).forEach(function (option) {
+                option.disabled = (format.unsupported_splits || []).includes(option.value);
+            });
+            if (splitSelect.options[splitSelect.selectedIndex].disabled) {
+                // Fall back to the split marked as the default in data_rules.py.
+                splitSelect.value = Object.keys(foldSplitRules).find(function (key) {
+                    return foldSplitRules[key].default;
+                });
+            }
+
+            // Formats can force the data representation (tf-dataset data stays tf-dataset).
+            const repSelect = document.getElementById("representation");
+            Array.from(repSelect.options).forEach(function (option) {
+                option.disabled = !!format.forces_representation && option.value !== format.forces_representation;
+            });
+            if (format.forces_representation) {
+                repSelect.value = format.forces_representation;
+            }
+
+            const split = foldSplitRules[splitSelect.value];
             const requires = split ? split.requires : [];
 
             document.querySelectorAll("[data-requires-option]").forEach(function (group) {
                 const needed = requires.includes(group.dataset.requiresOption);
-                group.hidden = !needed;
+                toggle(group, needed);
                 group.querySelectorAll("input").forEach(function (field) {
-                    field.disabled = !needed;
                     field.required = needed;
                 });
             });
 
+            document.querySelectorAll("[data-format-option]").forEach(function (group) {
+                toggle(group, !!format[group.dataset.formatOption]);
+            });
+
+            const cv = !!setType.cross_validation;
+            document.querySelectorAll("[data-set-type-option]").forEach(function (group) {
+                toggle(group, cv);
+            });
+            const rotation = document.getElementById("data_rotation");
+            rotation.required = cv;
+            const notice = document.getElementById("cv_notice");
+            notice.hidden = !cv;
+            notice.textContent = cv ? setType.notice : "";
+
+            const tf = !!(representationRules[value("representation")] || {}).tf_options;
+            document.querySelectorAll("[data-representation-option]").forEach(function (group) {
+                toggle(group, tf);
+            });
+            toggle(document.querySelector("[data-cache-disk]"), tf && value("tf_cache_mode") === "disk");
+            document.getElementById("tf_cache_path").required = tf && value("tf_cache_mode") === "disk";
+
+            // Inputs and outputs are optional only for formats that carry their own.
+            ["data_inputs", "data_outputs"].forEach(function (id) {
+                document.getElementById(id).required = !format.columns_optional;
+            });
+
             document.getElementById("data_fold_split_help").textContent = split ? split.help : "";
             document.getElementById("data_files_hint").hidden = !(split && split.file_fold_numbers);
-            document.getElementById("data_set_type_help").textContent =
-                setTypeHelp[document.getElementById("data_set_type").value] || "";
-            document.getElementById("data_format_help").textContent =
-                formatHelp[document.getElementById("data_format").value] || "";
+            document.getElementById("data_set_type_help").textContent = setType.help || "";
+            document.getElementById("data_format_help").textContent = format.help || "";
+            document.getElementById("representation_help").textContent =
+                (representationRules[value("representation")] || {}).help || "";
         }
 
-        ["data_fold_split", "data_set_type", "data_format"].forEach(function (id) {
+        ["data_fold_split", "data_set_type", "data_format", "representation",
+         "tf_cache_mode"].forEach(function (id) {
             document.getElementById(id).addEventListener("change", syncDataForm);
         });
         syncDataForm();

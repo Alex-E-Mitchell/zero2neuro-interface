@@ -16,6 +16,7 @@ def xor_arguments(**changes):
         data_outputs=["Out 0"],
         fold_split="identity",
         set_type="fixed",
+        rotation=0,
     )
     arguments.update(changes)
     return arguments
@@ -38,7 +39,7 @@ class TestGenerateDataConfig(unittest.TestCase):
             config,
             "--data_format=tabular\n--dataset_directory=./data\n--data_file=iris_data.csv\n"
             "--data_fold_split=random\n--data_n_folds=10\n"
-            "--data_set_type=holistic-cross-validation\n"
+            "--data_set_type=holistic-cross-validation\n--data_rotation=0\n"
             "--data_inputs\nIn 0\nIn 1\n--data_outputs\nOut 0\n",
         )
 
@@ -65,7 +66,7 @@ class TestGenerateDataConfig(unittest.TestCase):
             set_type="hold-out-cross-validation",
         ))
         self.assertIn("--data_groups=fold\n", config)
-        with self.assertRaisesRegex(ValueError, "Group column"):
+        with self.assertRaisesRegex(ValueError, "Data Groups"):
             generate_data_config(**xor_arguments(fold_split="group-by-example"))
 
     def test_unused_options_are_left_out(self):
@@ -101,7 +102,7 @@ class TestGenerateDataConfig(unittest.TestCase):
         ))
         self.assertIn(
             "--data_fold_split=random-stratify\n--data_n_folds=5\n--data_stratify=Class\n"
-            "--data_set_type=holistic-cross-validation\n", config)
+            "--data_set_type=holistic-cross-validation\n--data_rotation=0\n", config)
         with self.assertRaisesRegex(ValueError, "Class column"):
             generate_data_config(**xor_arguments(
                 fold_split="random-stratify", n_folds=5, set_type="holistic-cross-validation"))
@@ -199,5 +200,167 @@ class TestRuleTables(unittest.TestCase):
             missing_required(FOLD_SPLITS, "nope", {})
 
 
+
+class TestNewDataOptions(unittest.TestCase):
+    def test_cross_validation_needs_rotation_and_checks_range(self):
+        with self.assertRaisesRegex(ValueError, "Rotation"):
+            generate_data_config(**xor_arguments(
+                fold_split="random", n_folds=5, set_type="holistic-cross-validation", rotation=None))
+        with self.assertRaisesRegex(ValueError, "0 to 4"):
+            generate_data_config(**xor_arguments(
+                fold_split="random", n_folds=5, set_type="holistic-cross-validation", rotation=5))
+        config = generate_data_config(**xor_arguments(
+            fold_split="random", n_folds=5, set_type="hold-out-cross-validation",
+            rotation=2, n_validation_folds=2))
+        self.assertIn("--data_rotation=2\n--data_n_validation_folds=2\n", config)
+
+    def test_validation_folds_leave_room_for_training_and_testing(self):
+        with self.assertRaisesRegex(ValueError, "at most 3"):
+            generate_data_config(**xor_arguments(
+                fold_split="random", n_folds=5, set_type="holistic-cross-validation",
+                n_validation_folds=4))
+        with self.assertRaisesRegex(ValueError, "at least 1"):
+            generate_data_config(**xor_arguments(
+                fold_split="random", n_folds=5, set_type="holistic-cross-validation",
+                n_validation_folds=0))
+
+    def test_rotation_options_left_out_for_fixed(self):
+        config = generate_data_config(**xor_arguments(rotation=3, n_validation_folds=2))
+        self.assertNotIn("rotation", config)
+        self.assertNotIn("validation_folds", config)
+
+    def test_weights_and_tags(self):
+        config = generate_data_config(**xor_arguments(
+            data_weights="weight", tag_examples=["subject", "trial"]))
+        self.assertIn("--data_weights=weight\n--data_tag_examples\nsubject\ntrial\n", config)
+        with self.assertRaisesRegex(ValueError, "Data Weights"):
+            generate_data_config(**xor_arguments(data_weights="#bad"))
+        with self.assertRaisesRegex(ValueError, "Data Tag Examples"):
+            generate_data_config(**xor_arguments(tag_examples=["-bad"]))
+
+    def test_tabular_options(self):
+        config = generate_data_config(**xor_arguments(
+            tabular_header_row=2, tabular_column_range=[1, 4]))
+        self.assertIn("--tabular_header_row=2\n--tabular_column_range\n1\n4\n", config)
+        config = generate_data_config(**xor_arguments(
+            tabular_header_names=["In 0", "In 1", "Out 0"], tabular_column_list=[0, 1, 4]))
+        self.assertIn("--tabular_header_names\nIn 0\nIn 1\nOut 0\n--tabular_column_list\n0\n1\n4\n", config)
+        for bad, message in (
+            (dict(tabular_header_row=1, tabular_header_names=["a"]), "not both"),
+            (dict(tabular_column_range=[1, 2], tabular_column_list=[1]), "not both"),
+            (dict(tabular_column_range=[1]), "exactly 2"),
+            (dict(tabular_column_range=[4, 1]), "Column range"),
+            (dict(tabular_header_row=-1), "Header row"),
+        ):
+            with self.subTest(bad=bad):
+                with self.assertRaisesRegex(ValueError, message):
+                    generate_data_config(**xor_arguments(**bad))
+        with self.assertRaisesRegex(ValueError, "only apply to tabular"):
+            generate_data_config(**xor_arguments(data_format="pickle", tabular_header_row=1))
+
+    def test_tf_dataset_representation_options(self):
+        base = xor_arguments(representation="tf-dataset")
+        self.assertIn("--data_representation=tf-dataset\n",
+                      generate_data_config(**base))
+        self.assertIn("--data_tf_cache=\n--data_batch=64\n",
+                      generate_data_config(**dict(base, tf_cache_mode="memory", batch=64)))
+        self.assertIn("--data_tf_cache=./cache\n",
+                      generate_data_config(**dict(base, tf_cache_mode="disk", tf_cache_path="./cache")))
+        with self.assertRaisesRegex(ValueError, "Cache folder"):
+            generate_data_config(**dict(base, tf_cache_mode="disk"))
+        with self.assertRaisesRegex(ValueError, "Batch size"):
+            generate_data_config(**dict(base, batch=0))
+        # numpy is the default, so cache and batch are ignored and left out.
+        config = generate_data_config(**xor_arguments(tf_cache_mode="memory", batch=64))
+        self.assertNotIn("data_representation", config)
+        self.assertNotIn("data_tf_cache", config)
+        self.assertNotIn("data_batch", config)
+
+    def test_tf_dataset_incoming_format(self):
+        config = generate_data_config(**xor_arguments(
+            data_format="tf-dataset", data_files=["a", "b"], data_inputs=[], data_outputs=[],
+            representation="tf-dataset"))
+        self.assertIn("--data_format=tf-dataset\n", config)
+        self.assertNotIn("--data_inputs", config)
+        with self.assertRaisesRegex(ValueError, "must use"):
+            generate_data_config(**xor_arguments(
+                data_format="tf-dataset", data_inputs=[], data_outputs=[]))
+        with self.assertRaisesRegex(ValueError, "not available"):
+            generate_data_config(**xor_arguments(
+                data_format="tf-dataset", representation="tf-dataset",
+                fold_split="random", n_folds=3, data_inputs=[], data_outputs=[]))
+
+    def test_columns_still_required_for_other_formats(self):
+        with self.assertRaisesRegex(ValueError, "Data Inputs"):
+            generate_data_config(**xor_arguments(data_inputs=[]))
+        with self.assertRaisesRegex(ValueError, "Data Outputs"):
+            generate_data_config(**xor_arguments(data_outputs=[]))
+
+
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestDocsRules(unittest.TestCase):
+    def test_hold_out_has_one_fewer_rotation(self):
+        generate_data_config(**xor_arguments(
+            fold_split="random", n_folds=5, set_type="holistic-cross-validation", rotation=4))
+        generate_data_config(**xor_arguments(
+            fold_split="random", n_folds=5, set_type="hold-out-cross-validation", rotation=3))
+        with self.assertRaisesRegex(ValueError, "0 to 3"):
+            generate_data_config(**xor_arguments(
+                fold_split="random", n_folds=5, set_type="hold-out-cross-validation", rotation=4))
+
+    def test_training_folds(self):
+        cv = dict(fold_split="random", n_folds=6, set_type="holistic-cross-validation")
+        config = generate_data_config(**xor_arguments(**cv, n_training_folds=3, n_validation_folds=2))
+        self.assertIn("--data_n_validation_folds=2\n--data_n_training_folds=3\n", config)
+        with self.assertRaisesRegex(ValueError, "cannot be more than"):
+            generate_data_config(**xor_arguments(**cv, n_training_folds=4, n_validation_folds=2))
+        with self.assertRaisesRegex(ValueError, "Training folds"):
+            generate_data_config(**xor_arguments(**cv, n_training_folds=0))
+        self.assertNotIn("training_folds", generate_data_config(**xor_arguments(n_training_folds=3)))
+
+
+class TestDictionaryDriven(unittest.TestCase):
+    def test_new_split_needs_only_a_dictionary_entry(self):
+        from unittest import mock
+        import data_rules
+        new_split = {
+            "label": "Random Split (test copy)",
+            "folds_from": "data_n_folds",
+            "requires": ["data_n_folds"],
+            "help": "A split added only in the dictionary.",
+        }
+        with mock.patch.dict(data_rules.FOLD_SPLITS, {"random-copy": new_split}):
+            config = generate_data_config(**xor_arguments(
+                fold_split="random-copy", n_folds=4, set_type="holistic-cross-validation"))
+            self.assertIn("--data_fold_split=random-copy\n--data_n_folds=4\n", config)
+            with self.assertRaisesRegex(ValueError, "Number of folds"):
+                generate_data_config(**xor_arguments(
+                    fold_split="random-copy", set_type="holistic-cross-validation"))
+
+class TestOptionsTable(unittest.TestCase):
+    def test_options_the_choice_does_not_use_are_ignored(self):
+        # The identity split has no use for a group or class column, so they
+        # are neither checked nor written.
+        config = generate_data_config(**xor_arguments(
+            data_groups="#x", data_stratify="@c", n_folds=1))
+        self.assertNotIn("data_groups", config)
+        self.assertNotIn("data_stratify", config)
+        self.assertNotIn("data_n_folds", config)
+
+    def test_every_option_row_is_complete(self):
+        import data_rules
+        for name, rule in data_rules.OPTIONS.items():
+            with self.subTest(option=name):
+                self.assertIn(rule["kind"], ("text", "int", "list", "int_list"))
+                self.assertTrue(rule["label"])
+                if rule["kind"] in ("int", "int_list"):
+                    self.assertIn("min", rule)
+                self.assertIn(rule.get("applies_when", "always"),
+                              ("always", "required_by_split", "tabular_options",
+                               "cross_validation", "tf_options"))
+        for first, second in data_rules.EXCLUSIVE_OPTIONS:
+            self.assertIn(first, data_rules.OPTIONS)
+            self.assertIn(second, data_rules.OPTIONS)
