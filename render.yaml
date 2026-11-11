@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: zero2neuro-interface
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements-hosting.txt
+    # Configurations live in process memory: keep exactly one worker.
+    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --threads 1 --access-logfile - --error-logfile -
+    healthCheckPath: /
+    envVars:
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: 3.13.11
