@@ -76,8 +76,7 @@ python -m playwright show-trace /path/to/trace.zip
 
 ## Scope
 
-This contribution adds local browser tests only. GitHub Actions will be a separate
-task. Chromium is the initial browser target. The tests cover representative
+Chromium is the initial browser target. The tests cover representative
 workflows, not every configuration or successful CNN training. The Experiment-page
 download button is not yet merged; downloads are tested through Review.
 
@@ -86,3 +85,19 @@ by the new UI while keeping their field, default, and visibility assertions.
 
 Clear Inputs currently clears a browser draft, not an already generated file in
 Review. The test checks the draft-clearing behavior and does not claim otherwise.
+
+## Automatic GitHub checks
+
+The workflow in `.github/workflows/tests.yml` runs on pull requests, pushes to
+`main`, and manual dispatch. It runs two separate jobs on Ubuntu:
+
+- Python and JavaScript application tests with Python 3.13 and Node.js 24.
+- Chromium browser tests against the pinned Zero2Neuro parser version above.
+
+Open a pull request's **Checks** tab to see each job and its output. Failed browser
+tests upload available traces and screenshots as `browser-failure-evidence`,
+retained for seven days. Training the XOR model is not part of these checks.
+
+The workflow requires the browser-test files from PR #23. Merge that PR before
+merging this workflow into `main`. A successful local run does not verify the
+GitHub runner setup; check the first hosted run before treating CI as complete.

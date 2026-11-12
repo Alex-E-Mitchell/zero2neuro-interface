@@ -1,0 +1,75 @@
+name: Project tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: Python and JavaScript tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Install test dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Run Python tests
+        run: python -m pytest python/tests -q
+      - name: Run JavaScript tests
+        run: node --test python/tests/*.test.js
+
+  browser-tests:
+    name: Chromium workflow tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check out the tested Zero2Neuro parser version
+        uses: actions/checkout@v6
+        with:
+          repository: Symbiotic-Computing-Laboratory/zero2neuro
+          ref: 55638d7eab68e8dc1a173af15f567ba607a383d2
+          path: .test-deps/zero2neuro
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install test dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Install Chromium and Linux dependencies
+        run: python -m playwright install --with-deps chromium
+      - name: Run real-browser tests with the upstream parser
+        env:
+          NEURO_REPOSITORY_PATH: ${{ github.workspace }}/.test-deps/zero2neuro
+        run: python -m pytest tests/browser -q --tracing=retain-on-failure --screenshot=only-on-failure
+      - name: Upload failure traces and screenshots
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: browser-failure-evidence
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
