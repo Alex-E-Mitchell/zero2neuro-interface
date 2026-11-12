@@ -309,3 +309,9 @@ and Experiment files in the interface, run them through Zero2Neuro in a separate
 training environment, and check the saved model's predictions. It includes a
 four-row dataset, reference configurations, and a repeatable verification script.
 Training runs outside the web app; the example does not add a training button.
+
+## Browser workflow tests
+
+See [Browser testing](docs/BROWSER_TESTING.md) for setup and commands to watch
+Chromium fill forms, check errors and navigation, and verify downloaded files.
+These tests use the real Zero2Neuro parser and run separately from XOR training.
