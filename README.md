@@ -1,64 +1,36 @@
 # Zero2Neuro Interface
 
-A capstone project focused on creating a beginner-friendly graphical interface for the existing Zero2Neuro deep neural network toolbox.
+A beginner-friendly web interface for creating configuration files for the [Zero2Neuro](https://github.com/Symbiotic-Computing-Laboratory/zero2neuro) deep neural network toolbox.
 
-## Project Goal
+This project is developed as part of the CS4273 Capstone course. It provides guided forms for configuring neural networks, datasets, and training experiments without requiring users to manually write Zero2Neuro configuration arguments.
 
-Zero2Neuro already allows users to configure neural-network experiments without writing model code, but users still need to understand configuration-file syntax, valid argument choices, and experiment options.
+## Features
 
-This project aims to make that process easier by providing a guided web interface that:
+The Flask application currently provides four pages:
 
-- presents Zero2Neuro settings in a beginner-friendly form
-- validates user input before configuration files are generated
-- provides guardrails against invalid or inappropriate values
-- translates form inputs into Zero2Neuro-compatible configuration text
-- eventually supports network, data, and experiment configuration workflows
+| Page | Route | Description |
+|---|---|---|
+| Network | `/` | Configure Fully Connected or Convolutional Neural Networks |
+| Data | `/data` | Configure dataset formats, columns, and splitting methods |
+| Experiment | `/experiment` | Configure training parameters and evaluation settings |
+| Review | `/review` | Review and download generated configuration files |
 
-The current planned workflow is:
+### Network Configuration
 
-```text
-Beginner User
-     |
-     v
-Web Interface
-     |
-     v
-Validation / Configuration Generation
-     |
-     v
-Zero2Neuro-Compatible Configuration Files
-     |
-     v
-Existing Zero2Neuro System
-```
+The Network page supports Fully Connected and Convolutional Neural Network (CNN) configurations.
 
-The interface is intended to remain separate from the core Zero2Neuro codebase. Zero2Neuro continues to provide the underlying neural-network functionality while this project focuses on making configuration easier and more accessible.
+Available settings include:
 
-## Current Prototype
+- Input and output shapes
+- Hidden layer sizes and activation functions
+- Batch normalization
+- Dropout and input dropout
+- L1 and L2 regularization
+- CNN filters, kernel sizes, pooling, padding, and activation functions
 
-The current prototype implements the first end-to-end vertical slice of the interface: **Fully Connected and CNN Network Configuration**.
+The interface validates required fields, supported options, numeric values, and architecture-specific constraints.
 
-A user can open the local web application, enter basic network settings, and generate Zero2Neuro-compatible network configuration text.
-
-The current form includes:
-
-- Input Shape (comma-separated positive dimensions, e.g. `34` or `128, 128, 3`)
-- Hidden Layer Sizes (comma-separated positive integers; blank means zero layers)
-- Hidden Activation
-- Output Shape (comma-separated positive dimensions, e.g. `1` or `10, 20`)
-- Output Activation
-
-For example, the following form values:
-
-```text
-Input Shape: 34
-Hidden Layer Sizes: 64, 32
-Hidden Activation: ELU
-Output Shape: 1
-Output Activation: ELU+1
-```
-
-generate:
+For example, a Fully Connected network with input shape `34`, hidden layers `64, 32`, and output shape `1` can generate:
 
 ```text
 --network_type=fully_connected
@@ -73,47 +45,7 @@ generate:
 --output_activation=elup1
 ```
 
-The interface also includes:
-
-- validation for invalid input values
-- visible error messages for rejected settings
-- required shape fields and backend validation of comma-separated dimensions
-- a Copy button that copies only the generated configuration text
-- basic styling for a cleaner beginner-facing workflow
-
-## Experiment Configuration
-
-The Experiment page at `/experiment` supports experiment name, loss, optional
-metrics, learning rate, epochs and early stopping settings. Submissions are
-validated on the server and produce configuration text with a Copy Config button.
-Invalid submissions preserve entered values and show field-specific feedback.
-
-See [Experiment page notes](docs/EXPERIMENT_PAGE.md) for supported choices,
-upstream source references, manual checks and remaining Phase 2 work.
-
-## Current Guardrails
-
-The prototype currently validates several beginner-facing settings before generating configuration output.
-
-Examples include:
-
-- input and output shapes must be non-empty lists of positive integers
-- hidden-layer sizes may be empty (zero hidden layers)
-- hidden-layer sizes must contain only positive integers
-
-Examples:
-
-```text
-[64, 32] -> valid
-[128]    -> valid
-[0, 32]  -> invalid
-[-4, 32] -> invalid
-[]       -> valid (zero hidden layers)
-```
-
-These checks are an early example of the larger project goal: helping users avoid invalid Zero2Neuro configurations before they reach the underlying system.
-
-For multidimensional shapes, each dimension is written on its own line:
+For multidimensional shapes, each dimension is written on a separate line:
 
 ```text
 --input_shape
@@ -125,84 +57,243 @@ For multidimensional shapes, each dimension is written on its own line:
 20
 ```
 
-For zero hidden layers, the generated `--number_hidden_units` line is immediately
-followed by the next option, with no blank value lines. This explicitly supplies
-`[]` to Zero2Neuro's `nargs='*'` argument rather than relying on its `None` default.
+Hidden layers may also be empty. In that case, the generator emits `--number_hidden_units` without additional values, allowing the parser to receive an empty list.
 
-## Extensible Rules and Parser Metadata
+CNN validation includes matching layer-list lengths and spatial-size checks. The supported CNN options are a subset of the options available in Zero2Neuro.
 
-`python/config_rules.py` contains initial `fully_connected` and `cnn` architecture
-entries with required/optional argument sets. The generator uses a generic
-registry-based presence check; value validation remains separate. CNN generation
-supports the existing convolution fields, matching layer lists, and spatial-size checks.
+See [CNN Configuration](docs/CNN_CONFIGURATION.md) for additional details.
 
-CNN rules were verified against current upstream Zero2Neuro v0.11.4 and
-keras3_tools v0.2.1. See [CNN configuration notes](docs/CNN_CONFIGURATION.md) for
-source links, validation rules, documentation discrepancies, assumptions, test
-results, and remaining manual verification. Generated CNNs have not been built
-or trained against real Zero2Neuro.
+### Data Configuration
 
-`python/parser_metadata.py` provides `extract_argument_metadata(parser)`. Pass an
-existing `argparse.ArgumentParser`, for example the result of Zero2Neuro's
-`create_parser()`, to derive destinations, option aliases, type callables, `nargs`,
-defaults, help, choices, argparse-required status, and boolean flag information.
-Records remain Python objects, not JSON. This utility does not import Zero2Neuro
-or guess semantic string choices from help text. Parser declarations and manually
-maintained architecture constraints stay separate.
+The Data page supports:
+
+- Tabular (CSV/XLSX) and pickle datasets
+- Dataset directories and file names
+- Input and output column selection
+- One fold per file
+- Random folds
+- Class-balanced random folds
+- Grouping files into folds
+- Assigning folds using a data column
+- Dataset set-type options
+
+The interface validates required settings based on the selected data format and splitting method.
+
+### Experiment Configuration
+
+The Experiment page supports:
+
+- Experiment name
+- Loss function
+- Evaluation metrics
+- Learning rate
+- Number of epochs
+- Optional early stopping
+- Early stopping monitor, patience, and minimum improvement
+
+The page validates numeric ranges and supported options before generating configuration text.
+
+See [Experiment Page](docs/EXPERIMENT_PAGE.md) for supported settings and implementation details.
+
+### Review and Export
+
+The Review page displays the generated Network, Data, and Experiment configurations for the current session.
+
+Users can download individual files:
+
+```text
+network.txt
+data.txt
+experiment.txt
+```
+
+Once all three configurations have been generated, the interface can export them together as:
+
+```text
+zero2neuro_config.zip
+```
+
+The ZIP contains all three configuration files for use with the existing Zero2Neuro framework.
+
+## Validation
+
+The interface uses built-in validation rules and optional validation through Zero2Neuro's existing argument parser.
+
+### Built-in Validation
+
+Validation rules check:
+
+- Required fields
+- Positive integer dimensions and layer sizes
+- Supported activation functions and other choices
+- Dropout values in the range `0 <= rate < 1`
+- Nonnegative regularization coefficients
+- CNN layer-list lengths and spatial dimensions
+- Data configuration requirements
+- Experiment settings and numeric ranges
+
+For example, hidden-layer values are validated as follows:
+
+```text
+[64, 32] -> valid
+[128]    -> valid
+[0, 32]  -> invalid
+[-4, 32] -> invalid
+[]       -> valid (zero hidden layers)
+```
+
+Architecture-specific rules are maintained in `python/config_rules.py`.
+
+The rules were developed against Zero2Neuro v0.11.4 and keras3_tools v0.2.1. See the CNN documentation for source revisions, assumptions, and limitations.
+
+### Parser Metadata
+
+`python/parser_metadata.py` provides utilities for extracting information from an existing `argparse.ArgumentParser`.
+
+The metadata includes:
+
+- Argument names and aliases
+- Types and defaults
+- Required status
+- Supported choices
+- Boolean flags
+- Help information
+
+Parser metadata is kept separate from the interface's manually maintained architecture rules.
+
+### Zero2Neuro Parser Integration
+
+`python/parser_validator.py` validates generated configuration arguments using Zero2Neuro's existing `create_parser()` function.
+
+When `NEURO_REPOSITORY_PATH` is configured, the interface:
+
+1. Validates submitted form values.
+2. Generates the corresponding configuration text.
+3. Loads the existing Zero2Neuro argument parser.
+4. Checks whether the generated arguments are accepted.
+5. Rejects invalid configurations and displays an error.
+6. Saves accepted configurations for review and export.
+
+If the external parser is unavailable, the interface continues using its built-in validation rules.
+
+This integration does not require modifications to the main Zero2Neuro repository.
+
+**Note:** Parser validation confirms that arguments can be parsed. It does not guarantee successful data loading, network construction, or training.
+
+## User Interface
+
+The application uses shared page layouts and navigation.
+
+Current interface improvements include:
+
+- Updated visual styling
+- Field-specific validation messages
+- Preserved form values after submissions
+- Browser-side form persistence
+- Clear Inputs controls
+- Configuration previews
+- Individual file downloads and ZIP export
+
+Unfinished form inputs are stored in the browser using `localStorage`, allowing users to return to their entries after navigating between pages or reloading.
+
+The Clear Inputs control resets the current page's draft without clearing drafts on other pages.
+
+Generated configurations are stored separately in temporary server-side memory for the current browser session. They are not permanently saved and are lost when the Flask server restarts.
 
 ## Repository Structure
 
 ```text
 zero2neuro-interface/
 |
-|-- README.md
-|-- .gitignore
 |-- app.py
+|-- README.md
 |-- requirements.txt
+|-- .gitignore
 |
 |-- python/
 |   |-- config_generator.py
 |   |-- config_rules.py
+|   |-- config_store.py
+|   |-- data_generator.py
+|   |-- data_page.py
+|   |-- data_rules.py
+|   |-- experiment_generator.py
+|   |-- experiment_page.py
+|   |-- network_form.py
 |   |-- parser_metadata.py
+|   |-- parser_validator.py
+|   |-- review_page.py
 |   `-- tests/
-|       |-- test_config_generator.py
-|       |-- test_config_rules.py
-|       |-- test_parser_metadata.py
-|       `-- test_app.py
 |
 |-- templates/
-|   `-- network.html
+|   |-- base.html
+|   |-- network.html
+|   |-- data.html
+|   |-- experiment.html
+|   `-- review.html
 |
 |-- static/
-|   `-- style.css
+|   |-- style.css
+|   |-- data.css
+|   |-- network_selector.js
+|   |-- dropout_validation.js
+|   |-- form_persistence.js
+|   `-- experiment.js
 |
 |-- docs/
-|   `-- IMPLEMENTATION_PLAN.md
+|   |-- IMPLEMENTATION_PLAN.md
+|   |-- CNN_CONFIGURATION.md
+|   `-- EXPERIMENT_PAGE.md
 |
 |-- examples/
-|   `-- sample_network_config.txt
+|   |-- sample_network_config.txt
+|   `-- xor/
 |
 `-- archive/
-    `-- ticket2-three-language-tests/
-        |-- java/
-        `-- javascript/
 ```
 
-The `archive/` directory contains earlier course-assignment work demonstrating equivalent validation logic in multiple programming languages. Current capstone development is focused on the Python backend and web interface.
+The `python/` directory contains backend logic, configuration generation, validation, and automated tests.
 
-Local development files such as `.venv/`, `__pycache__/`, and compiled Python files should not be committed.
+The `templates/` and `static/` directories contain the Flask user interface.
 
-## Running the Prototype
+The `docs/` directory contains additional implementation documentation.
 
-### 1. Create a virtual environment
+The `examples/` directory contains configuration examples and XOR training verification resources.
 
-From the repository root:
+The `archive/` directory contains earlier course-assignment work.
+
+## Installation
+
+### Requirements
+
+To run the web interface locally:
+
+- Python
+- Git
+- A web browser
+
+The Python packages required by the interface are listed in `requirements.txt`.
+
+The main Zero2Neuro repository is optional for running the web application but is needed to enable parser integration.
+
+Actual neural network training requires additional dependencies and a separate Zero2Neuro environment.
+
+### 1. Clone the Repository
+
+```powershell
+git clone https://github.com/Alex-E-Mitchell/zero2neuro-interface.git
+cd zero2neuro-interface
+```
+
+If the repository is already cloned, open a terminal in its root directory.
+
+### 2. Create a Virtual Environment
 
 ```powershell
 python -m venv .venv
 ```
 
-### 2. Activate the virtual environment
+### 3. Activate the Virtual Environment
 
 On Windows PowerShell:
 
@@ -210,99 +301,197 @@ On Windows PowerShell:
 .\.venv\Scripts\Activate.ps1
 ```
 
-If PowerShell blocks activation for the current session, run:
+If PowerShell blocks activation, run:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 
-and then activate the environment again.
-
-### 3. Install dependencies
+Then activate the environment again:
 
 ```powershell
-pip install -r requirements.txt
+.\.venv\Scripts\Activate.ps1
 ```
 
-### 4. Run the web application
+The execution-policy change applies only to the current PowerShell session.
+
+### 4. Install Dependencies
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+The application requirements include Flask, NumPy, and their supporting packages.
+
+### 5. Configure Parser Integration (Optional)
+
+To enable validation through Zero2Neuro's existing parser, clone the main repository separately:
+
+```powershell
+git clone https://github.com/Symbiotic-Computing-Laboratory/zero2neuro.git
+```
+
+Set the `NEURO_REPOSITORY_PATH` environment variable to the root of the main Zero2Neuro repository.
+
+Example:
+
+```powershell
+$env:NEURO_REPOSITORY_PATH = "D:\CS4273\zero2neuro"
+```
+
+Replace the example path with the actual location of your checkout.
+
+The expected structure is:
+
+```text
+zero2neuro/
+`-- src/
+    `-- parser.py
+```
+
+The parser's required Python dependencies must also be available in the active environment.
+
+This environment variable is set for the current PowerShell session. It must be configured again in a new session if needed.
+
+If the parser is unavailable, the web application can still generate configurations using its built-in validation rules.
+
+**Important:** The interface's parser integration expects `NEURO_REPOSITORY_PATH` to point directly to the Zero2Neuro checkout. The upstream training framework uses this variable differently. The XOR verification runner handles the training environment separately.
+
+### 6. Run the Application
 
 ```powershell
 python app.py
 ```
 
-Then open:
+Open:
 
 ```text
 http://127.0.0.1:5000
 ```
 
-in a web browser.
+Use the navigation menu to access the Network, Data, Experiment, and Review pages.
 
-## Running the Python Tests
+The Flask development server is intended for local development and testing.
 
-From the repository root:
+## Testing
+
+### Python Tests
+
+The repository contains Python tests for configuration generation, validation, Flask routes, parser integration, and review/export behavior.
+
+Install the test runner if needed:
 
 ```powershell
-pytest -q
+python -m pip install pytest pytest-subtests
 ```
 
-Install the test runner with `pip install pytest pytest-subtests` if needed.
-Run the current JavaScript tests with:
+Run the test suite from the repository root:
 
 ```powershell
-node --test python/tests/network_selector.test.js python/tests/dropout_validation.test.js
+python -m pytest -q
 ```
 
-The tests cover shape/hidden-layer validation, exact configuration output, Flask
-form submissions and errors, registry structure and presence checks, parser metadata,
-and generated argument round trips using a lightweight argparse fixture. They do
-not build or train neural networks.
+Alternatively, run the unittest suite:
 
-## Current Technology Stack
+```powershell
+python -m unittest discover -s python/tests -v
+```
 
-The current working prototype uses:
+Some parser tests use mocks and do not require the full Zero2Neuro training environment.
 
-- **Python** - backend logic and Zero2Neuro configuration generation
-- **Flask** - lightweight local web application
-- **HTML/CSS** - beginner-facing interface and styling
-- **JavaScript** - small browser-side features such as copying generated configuration text
-- **Python unittest** - automated tests for validation and configuration generation
+### JavaScript Tests
 
-The project may adopt additional technologies later if they provide a clear benefit, but the current priority is building a small working configuration workflow before expanding the architecture.
+The repository includes Node.js tests for network selection, dropout validation, and form persistence.
 
-## Near-Term Development Plan
+With Node.js installed, run:
 
-1. Refine Fully Connected network configuration and validation.
-2. Add more beginner-friendly explanations and tooltips.
-3. Add a visible multi-step workflow for Network, Data, Experiment, and Review.
-4. Add support for CNN network configuration.
-5. Add Data configuration generation.
-6. Add Experiment configuration generation.
-7. Export complete Zero2Neuro configuration files.
-8. Test generated files directly with Zero2Neuro.
-9. Expand guardrails based on Zero2Neuro argument requirements and mentor feedback.
-10. Treat recurrent networks, U-Net, and scikit-learn pipelines as later extensions.
+```powershell
+node --test python/tests/*.test.js
+```
 
-## Relationship to Zero2Neuro
+On Windows PowerShell, if wildcard expansion is not supported by the Node.js command, specify the test files:
 
-This repository contains the capstone group's interface work rather than a replacement for the Zero2Neuro project.
+```powershell
+node --test python/tests/network_selector.test.js python/tests/dropout_validation.test.js python/tests/form_persistence.test.js
+```
 
-The intended relationship is:
+These tests verify browser-side behavior independently of the Python test suite.
+
+Passing the automated tests does not guarantee that every generated configuration will successfully train in Zero2Neuro.
+
+## XOR Training Verification
+
+The repository includes an XOR example demonstrating how configurations generated by the interface can be used for actual training with Zero2Neuro.
+
+See [XOR Verification Walkthrough](examples/xor/README.md).
+
+The example includes:
+
+- A four-row XOR dataset
+- Reference Network, Data, and Experiment configurations
+- A Python training and verification script
+- Recorded results from a successful run
+
+The runner:
+
+1. Loads the configuration files.
+2. Validates them using the upstream parser.
+3. Runs training through Zero2Neuro.
+4. Reloads the trained model.
+5. Checks predictions for all four XOR inputs.
+
+The example was verified using pinned Zero2Neuro and keras3_tools revisions, with Python 3.12 on Apple Silicon macOS.
+
+The recorded verification completed successfully and classified all four training rows correctly.
+
+The example is a small training demonstration, not a held-out evaluation or proof that every configuration supported by the interface will train successfully.
+
+### Running the XOR Example
+
+The XOR walkthrough uses a separate Python 3.12 environment because training requires additional dependencies, including TensorFlow.
+
+Follow the setup instructions in:
 
 ```text
-Zero2Neuro Interface
-        |
-        | generates validated configuration
-        v
-Existing Zero2Neuro
-        |
-        v
-Training / Evaluation / Results
+examples/xor/README.md
 ```
 
-The current required goal is to make Zero2Neuro configuration easier for beginners. Directly launching Zero2Neuro experiments from the GUI may be explored later, but it is not required for the initial configuration-generation workflow.
+The documented runner is:
 
-## Verify exported files with XOR training
+```text
+examples/xor/run_demo.py
+```
+
+It can use either the included reference configurations or files exported from the web interface.
+
+Training runs outside the Flask application. The web interface does not directly start or manage training jobs.
+
+## Current Limitations
+
+The current implementation supports configuration generation, validation, review, and export.
+
+Known limitations include:
+
+- The interface does not directly launch Zero2Neuro training.
+- Training results are not displayed in the web interface.
+- Parser validation does not guarantee successful model training.
+- Only a subset of Zero2Neuro's available configuration options is exposed.
+- Generated configurations are stored temporarily on the server.
+- The XOR verification covers a specific Fully Connected example, not CNN training or every possible configuration.
+- Additional end-to-end testing and usability improvements are still needed.
+
+## Additional Documentation
+
+- [Implementation Plan](docs/IMPLEMENTATION_PLAN.md)
+- [CNN Configuration](docs/CNN_CONFIGURATION.md)
+- [Experiment Page](docs/EXPERIMENT_PAGE.md)
+- [XOR Training Verification](examples/xor/README.md)
+
+## Project Scope
+
+The Zero2Neuro Interface is a separate application from the main Zero2Neuro framework.
+
+Its purpose is to simplify configuration creation, provide validation feedback, and export compatible configuration files.
 
 The [XOR walkthrough](examples/xor/README.md) shows how to generate Network, Data,
 and Experiment files in the interface, run them through Zero2Neuro in a separate
