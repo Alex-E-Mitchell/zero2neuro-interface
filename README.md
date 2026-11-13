@@ -493,4 +493,14 @@ The Zero2Neuro Interface is a separate application from the main Zero2Neuro fram
 
 Its purpose is to simplify configuration creation, provide validation feedback, and export compatible configuration files.
 
-The existing Zero2Neuro framework remains responsible for loading data, building models, training, evaluation, and generating results.
+The [XOR walkthrough](examples/xor/README.md) shows how to generate Network, Data,
+and Experiment files in the interface, run them through Zero2Neuro in a separate
+training environment, and check the saved model's predictions. It includes a
+four-row dataset, reference configurations, and a repeatable verification script.
+Training runs outside the web app; the example does not add a training button.
+
+## Browser workflow tests
+
+See [Browser testing](docs/BROWSER_TESTING.md) for setup and commands to watch
+Chromium fill forms, check errors and navigation, and verify downloaded files.
+These tests use the real Zero2Neuro parser and run separately from XOR training.
