@@ -23,3 +23,8 @@ Thumbs.db
 .xor-runtime/
 .xor-venv/
 xor-runs/
+
+# Browser test dependencies and generated failure evidence
+.test-deps/
+test-results/
+.pytest_cache/

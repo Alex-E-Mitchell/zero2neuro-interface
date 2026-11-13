@@ -343,7 +343,7 @@ class TestNetworkForm(unittest.TestCase):
                 self.assertIn('value="cnn" selected', page)
                 self.assertNotIn('id="fully-connected-fields" hidden disabled', page)
                 self.assertNotIn('id="cnn-status" role="status" hidden', page)
-                cnn_fields = re.search(r'<fieldset[^>]*id="cnn-fields"[^>]*>', page).group()
+                cnn_fields = re.search(r'<(?:fieldset|section)[^>]*id="cnn-fields"[^>]*>', page).group()
                 self.assertNotIn("hidden", cnn_fields)
                 self.assertNotIn("disabled", cnn_fields)
                 self.assertNotIn('id="generate-button" disabled', page)
@@ -358,7 +358,7 @@ class TestNetworkForm(unittest.TestCase):
         from config_rules import NETWORK_ARCHITECTURES
 
         page = self.client.get("/").get_data(as_text=True)
-        fields = re.search(r'<fieldset[^>]*id="cnn-fields"[^>]*>(.*?)</fieldset>', page, re.DOTALL).group(1)
+        fields = re.search(r'<(?:fieldset|section)[^>]*id="cnn-fields"[^>]*>(.*?)</(?:fieldset|section)>', page, re.DOTALL).group(1)
         names = re.findall(r'<(?:input|select)[^>]*name="([^"]+)"', fields)
         self.assertEqual(set(names), {"conv_number_filters", "conv_kernel_size", "conv_pool_size",
                                      "conv_padding", "conv_activation"})
