@@ -52,7 +52,7 @@ class TestDataPage(unittest.TestCase):
 
     def test_random_split_submission(self):
         fields = dict(self.fields, data_fold_split="random", data_n_folds="10",
-                      data_set_type="holistic-cross-validation")
+                      data_set_type="holistic-cross-validation", data_rotation="0")
         page = self.client.post("/data", data=fields).get_data(as_text=True)
         self.assertIn("--data_fold_split=random\n--data_n_folds=10\n", page)
         # The chosen split stays selected and its extra field stays visible.
@@ -62,7 +62,7 @@ class TestDataPage(unittest.TestCase):
 
     def test_random_stratify_submission(self):
         fields = dict(self.fields, data_fold_split="random-stratify", data_n_folds="5",
-                      data_stratify="Class", data_set_type="holistic-cross-validation")
+                      data_stratify="Class", data_set_type="holistic-cross-validation", data_rotation="0")
         page = self.client.post("/data", data=fields).get_data(as_text=True)
         self.assertIn("--data_n_folds=5\n--data_stratify=Class\n", page)
         tag = re.search(r'<div[^>]*data-requires-option="data_stratify"[^>]*>', page).group()
@@ -93,6 +93,41 @@ class TestDataPage(unittest.TestCase):
 
     def test_network_page_still_works(self):
         self.assertEqual(self.client.get("/").status_code, 200)
+
+
+    def test_new_fields_are_on_the_page(self):
+        page = self.client.get("/data").get_data(as_text=True)
+        for name in ("data_weights",
+                     "tag_examples", "tabular_header_row", "tabular_header_names",
+                     "tabular_column_range", "tabular_column_list", "data_rotation",
+                     "n_validation_folds", "representation", "tf_cache_mode",
+                     "tf_cache_path", "batch"):
+            with self.subTest(name=name):
+                self.assertRegex(page, r'name="' + name + '"')
+        self.assertIn("commonly set on the command line", page)
+
+    def test_cross_validation_submission_with_new_options(self):
+        fields = dict(self.fields, data_fold_split="random", data_n_folds="5",
+                      data_set_type="holistic-cross-validation", data_rotation="1",
+                      n_validation_folds="2", data_weights="w", tag_examples="id",
+                      representation="tf-dataset", tf_cache_mode="disk",
+                      tf_cache_path="./cache", batch="16")
+        page = self.client.post("/data", data=fields).get_data(as_text=True)
+        for line in ("--data_rotation=1", "--data_n_validation_folds=2", "--data_weights=w",
+                     "--data_tag_examples\nid", "--data_representation=tf-dataset",
+                     "--data_tf_cache=./cache", "--data_batch=16"):
+            with self.subTest(line=line):
+                self.assertIn(line, page)
+
+    def test_missing_rotation_shows_error(self):
+        fields = dict(self.fields, data_fold_split="random", data_n_folds="5",
+                      data_set_type="holistic-cross-validation")
+        page = self.client.post("/data", data=fields).get_data(as_text=True)
+        self.assertIn("needs: Rotation", page)
+
+    def test_non_numbers_show_error(self):
+        page = self.client.post("/data", data=dict(self.fields, tabular_column_list="a b")).get_data(as_text=True)
+        self.assertIn("Column list must be whole numbers", page)
 
 
 if __name__ == "__main__":
