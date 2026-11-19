@@ -1,24 +1,38 @@
+
 from io import BytesIO
 from zipfile import ZIP_DEFLATED, ZipFile
+
 from config_store import get_all_configs, get_config
-from flask import abort, app, render_template, Response, send_file
+from flask import abort, render_template, Response, send_file
+
+
+def get_available_configs(configurations):
+    """Return only non-empty generated configurations."""
+    return {
+        name: content
+        for name, content in configurations.items()
+        if content and content.strip()
+    }
+
 
 def review():
-    """Display saved configurations and check completeness."""
+    """Display saved configurations and allow partial exports."""
     configurations = get_all_configs()
+    available = get_available_configs(configurations)
 
     missing = [
         name
-        for name, content in configurations.items()
-        if not content or not content.strip()
+        for name in configurations
+        if name not in available
     ]
 
     return render_template(
         "review.html",
         configurations=configurations,
         missing_configs=missing,
-        ready_for_export=not missing,
+        ready_for_export=bool(available),
     )
+
 
 def download_config(name):
     """Download an individual generated configuration."""
@@ -28,7 +42,10 @@ def download_config(name):
     config = get_config(name)
 
     if not config or not config.strip():
-        abort(404, description="Configuration has not been generated.")
+        abort(
+            404,
+            description="Configuration has not been generated.",
+        )
 
     return Response(
         config,
@@ -39,29 +56,22 @@ def download_config(name):
         },
     )
 
+
 def download_all_configs():
-    """Download all three configuration files as a ZIP archive."""
+    """Download all available configurations as a ZIP archive."""
     configurations = get_all_configs()
+    available = get_available_configs(configurations)
 
-    missing = [
-        name
-        for name, content in configurations.items()
-        if not content or not content.strip()
-    ]
-
-    if missing:
+    if not available:
         abort(
             400,
-            description=(
-                "Cannot export an incomplete configuration. "
-                f"Missing: {', '.join(missing)}."
-            ),
+            description="No configurations available for export.",
         )
 
     zip_buffer = BytesIO()
 
     with ZipFile(zip_buffer, "w", ZIP_DEFLATED) as archive:
-        for name, content in configurations.items():
+        for name, content in available.items():
             archive.writestr(f"{name}.txt", content)
 
     zip_buffer.seek(0)
@@ -72,11 +82,13 @@ def download_all_configs():
         as_attachment=True,
         download_name="zero2neuro_config.zip",
     )
+
     response.headers["Cache-Control"] = "no-store"
     return response
 
+
 def register_review_page(app):
-    """Register the Review page route."""
+    """Register the Review page routes."""
     app.add_url_rule(
         "/review",
         endpoint="review",

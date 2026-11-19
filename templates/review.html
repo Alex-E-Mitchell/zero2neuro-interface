@@ -1,14 +1,10 @@
-
 {% extends "base.html" %}
-
 {% block title %}Review Configuration - Zero2Neuro{% endblock %}
-
 {% block heading %}Review and Export{% endblock %}
-
 {% block description %}
-Review your Network, Data, and Experiment configurations before exporting.
+Review your generated Network, Data, and Experiment configurations.
+Export any successfully generated configurations.
 {% endblock %}
-
 {% block content %}
 
 <!-- Configuration Status -->
@@ -16,25 +12,47 @@ Review your Network, Data, and Experiment configurations before exporting.
     <h3>Configuration Status</h3>
 
     {% if ready_for_export %}
-        <p>All three configurations are available for export.</p>
+        <p>
+            Your successfully generated configurations
+            are available for export.
+        </p>
+
+        <p>
+            The ZIP file will include:
+        </p>
+
+        <ul>
+            {% for name, config in configurations.items() %}
+                {% if config and config.strip() %}
+                    <li>{{ name | capitalize }} Configuration</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
 
         <a
             href="{{ url_for('download_all_configs') }}"
             class="download-button"
         >
             <span class="download-icon" aria-hidden="true">&#8595;</span>
-            <span>Download All Configurations (.zip)</span>
+            <span>Download Available Configurations (.zip)</span>
         </a>
 
     {% else %}
-        <p>Configuration is incomplete.</p>
+        <p>No configurations have been generated yet.</p>
+
         <p>
-            Missing:
-            {{ missing_configs | join(", ") }}
+            Generate at least one Network, Data, or Experiment
+            configuration to enable ZIP export.
+        </p>
+    {% endif %}
+
+    {% if missing_configs and ready_for_export %}
+        <p>
+            Not yet generated:
+            {{ missing_configs | join(", ") }}.
         </p>
         <p>
-            Generate the missing configurations before exporting
-            the complete configuration package.
+            These configurations will not be included in the ZIP file.
         </p>
     {% endif %}
 </section>
@@ -44,7 +62,7 @@ Review your Network, Data, and Experiment configurations before exporting.
 <section class="form-section">
     <h3>{{ name | capitalize }} Configuration</h3>
 
-    {% if config %}
+    {% if config and config.strip() %}
         <pre>{{ config }}</pre>
 
         <a
@@ -60,5 +78,4 @@ Review your Network, Data, and Experiment configurations before exporting.
     {% endif %}
 </section>
 {% endfor %}
-
 {% endblock %}

@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "python"))
 
 from config_generator import generate_network_config
 from parser_validator import validate_config
-from config_store import save_config, clear_config
+from config_store import save_config
 from config_rules import (
     NETWORK_ARCHITECTURES,
     DROPOUT_RULES,
@@ -31,9 +31,6 @@ register_experiment_page(app)
 def network():
     config = None
     error = None
-    
-    if request.method == "POST":
-        clear_config("network")
 
     values, arguments, errors = prepare_network_form(
         request.form if request.method == "POST" else None
