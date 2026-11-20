@@ -22,7 +22,13 @@
     function collectValues() {
         const values = {};
         for (const field of form.elements) {
-            if (!field.name || field.type === "submit" || field.type === "button" || field.type === "file") {
+            if (
+                !field.name ||
+                field.name === "csrf_token" ||
+                field.type === "submit" ||
+                field.type === "button" ||
+                field.type === "file"
+            ) {
                 continue;
             }
             // Include disabled/hidden fields: users can return to another network type or split.
@@ -52,7 +58,14 @@
         const saved = readStorage();
         if (!saved) return;
         for (const field of form.elements) {
-            if (!field.name || !Object.prototype.hasOwnProperty.call(saved, field.name) || field.type === "file") continue;
+            if (
+                !field.name ||
+                field.name === "csrf_token" ||
+                !Object.prototype.hasOwnProperty.call(saved, field.name) ||
+                field.type === "file"
+            ) {
+                continue;
+            }
             const value = saved[field.name];
             if (field.type === "checkbox") {
                 field.checked = Array.isArray(value) && value.includes(field.value);

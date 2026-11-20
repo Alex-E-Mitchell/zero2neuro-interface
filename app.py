@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 from flask import Flask, render_template, request
+from flask_wtf.csrf import CSRFProtect
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "python"))
 
@@ -22,6 +23,8 @@ from experiment_page import register_experiment_page
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or os.urandom(32)
+csrf = CSRFProtect()
+csrf.init_app(app)
 register_data_page(app)
 register_review_page(app)
 register_experiment_page(app)

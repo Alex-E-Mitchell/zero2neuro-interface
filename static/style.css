@@ -131,3 +131,13 @@ a:focus-visible,button:focus-visible {outline:3px solid rgba(33,119,160,.4);outl
 @media(max-width:800px){body{padding:13px}.container{padding:0 22px 18px}.page-header{padding-top:23px}.page-navigation{margin-bottom:27px}.config-section,.form-section{padding:21px 19px}.tooltip{left:auto;right:-16px;top:25px}.site-footer{flex-wrap:wrap}.edition-label{display:none}}
 @media(max-width:530px){.container{padding:0 15px 16px}.eyebrow{font-size:9px}.workspace-label{font-size:9px;flex-wrap:wrap}.page-navigation a{font-size:11px;padding:7px 2px;min-height:39px}.page-navigation{gap:1px}.content-heading{margin-bottom:20px}.config-section,.form-section{padding:18px 14px}.section-heading{gap:10px}.config-header{align-items:flex-start;flex-direction:column}.tooltip{width:min(265px,80vw)}.site-footer span:last-child{display:none}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto !important;transition:none !important;}}
+/* Review page action buttons */
+.review-actions,.duplicate-actions {display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:16px 0 12px;}
+.review-actions form,.duplicate-actions form {margin:0;width:auto;}
+.review-btn {display:inline-flex;align-items:center;justify-content:center;width:auto;padding:10px 18px;border:1px solid transparent;border-radius:6px;font-size:14px;font-weight:600;line-height:1.4;text-decoration:none;cursor:pointer;transition:background-color .2s ease;}
+.review-btn-download {background:#fff;color:#235c79;border-color:#bfd1dc;font-size:12px;font-weight:700;border-radius:5px;}
+.review-btn-download:hover {background:#eaf4f9;border-color:#8db4ca;color:#154f71;}
+.review-btn-download:visited {color:#235c79;}
+.review-btn-remove {background:#fff;color:#dc2626;border-color:#dc2626;}
+.review-btn-remove:hover {background:#fef2f2;}
+.review-btn:focus-visible {outline:3px solid #93c5fd;outline-offset:2px;}

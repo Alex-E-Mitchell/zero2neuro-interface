@@ -6,6 +6,7 @@
 {% block content %}
 {{ error_summary(errors, error) }}
 <form method="POST" novalidate data-draft-key="experiment">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <section class="config-section">
         <div class="section-heading">
             <span class="section-number">01</span>
