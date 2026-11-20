@@ -113,6 +113,7 @@ NETWORK_ARCHITECTURES = {
     },
 }
 
+
 def validate_required_arguments(network_type, arguments):
     """Check presence through registry data; value semantics are checked elsewhere.
 
@@ -150,9 +151,11 @@ STRING_CHOICES = {
     ),
 }
 
+
 def get_string_choices(argument_name):
     """Return documented choices for an argument, if available."""
     return STRING_CHOICES.get(argument_name, ())
+
 
 def validate_config_values(arguments, rules):
     """Validate values using reusable configuration rules."""

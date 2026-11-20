@@ -1,5 +1,5 @@
 from flask import render_template, request
-from config_store import save_config, clear_config
+from config_store import save_config
 
 from data_generator import generate_data_config, parse_lines, parse_optional_int
 from data_rules import (
@@ -23,7 +23,6 @@ def data():
     form = request.form
 
     if request.method == "POST":
-        clear_config("data")
         try:
             config = generate_data_config(
                 data_format=form.get("data_format", ""),

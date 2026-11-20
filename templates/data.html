@@ -16,6 +16,7 @@
             data-set-type-rules='{{ set_type_rules|tojson }}'
             data-format-rules='{{ format_rules|tojson }}'
             data-representation-rules='{{ representation_rules|tojson }}'>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <section class="config-section">
                 <div class="section-heading">

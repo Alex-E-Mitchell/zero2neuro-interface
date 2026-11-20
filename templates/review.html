@@ -1,64 +1,133 @@
-
 {% extends "base.html" %}
 
-{% block title %}Review Configuration - Zero2Neuro{% endblock %}
-
-{% block heading %}Review and Export{% endblock %}
-
-{% block description %}
-Review your Network, Data, and Experiment configurations before exporting.
-{% endblock %}
-
 {% block content %}
+<h1>Review and Export</h1>
 
-<!-- Configuration Status -->
-<section class="form-section">
-    <h3>Configuration Status</h3>
+<p>
+    Review your saved configurations, download individual files,
+    or export all saved configurations as a ZIP.
+</p>
 
-    {% if ready_for_export %}
-        <p>All three configurations are available for export.</p>
+{% if duplicate_attempts %}
+<section class="review-duplicates">
+    <h2>Duplicate Configurations Detected</h2>
 
-        <a
-            href="{{ url_for('download_all_configs') }}"
-            class="download-button"
-        >
-            <span class="download-icon" aria-hidden="true">&#8595;</span>
-            <span>Download All Configurations (.zip)</span>
-        </a>
+    <p>
+        The following configurations match previously saved
+        configurations. Your original configurations are safe.
+    </p>
 
-    {% else %}
-        <p>Configuration is incomplete.</p>
+    {% for attempt in duplicate_attempts %}
+    <div class="config-card">
+        <h3>Duplicate {{ attempt.name|capitalize }} Configuration</h3>
+
         <p>
-            Missing:
-            {{ missing_configs | join(", ") }}
+            This configuration has already been saved.
+            No additional copy was created automatically.
         </p>
+
+        <pre>{{ attempt.content }}</pre>
+
         <p>
-            Generate the missing configurations before exporting
-            the complete configuration package.
+            You can choose to keep another copy or discard
+            this duplicate.
         </p>
-    {% endif %}
+
+        <div class="duplicate-actions">
+            <form
+                action="{{ url_for('keep_duplicate_config', attempt_id=attempt.id) }}"
+                method="POST"
+            >
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <button
+                    type="submit"
+                    class="review-btn review-btn-download"
+                >
+                    Keep Duplicate
+                </button>
+            </form>
+
+            <form
+                action="{{ url_for('discard_duplicate_config', attempt_id=attempt.id) }}"
+                method="POST"
+            >
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <button
+                    type="submit"
+                    class="review-btn review-btn-remove"
+                >
+                    Discard Duplicate
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
 </section>
+{% endif %}
 
-<!-- Individual Configuration Previews -->
-{% for name, config in configurations.items() %}
-<section class="form-section">
-    <h3>{{ name | capitalize }} Configuration</h3>
+{% for name, configs in configurations.items() %}
+<section class="review-section">
+    <h2>{{ name|capitalize }} Configurations</h2>
 
-    {% if config %}
-        <pre>{{ config }}</pre>
+    {% if configs %}
+        {% for config in configs %}
+        <div class="config-card">
+            <h3>{{ name|capitalize }} Configuration {{ loop.index }}</h3>
 
-        <a
-            href="{{ url_for('download_config', name=name) }}"
-            class="download-button"
-        >
-            <span class="download-icon" aria-hidden="true">&#8595;</span>
-            <span>Download {{ name }}.txt</span>
-        </a>
+            <pre>{{ config.content }}</pre>
 
+            <div class="review-actions">
+                <a
+                    class="review-btn review-btn-download"
+                    href="{{ url_for('download_config', name=name, config_id=config.id) }}"
+                >
+                    Download
+                </a>
+
+                <form
+                    action="{{ url_for('remove_config', name=name, config_id=config.id) }}"
+                    method="POST"
+                    onsubmit="return confirm('Remove this saved configuration?');"
+                >
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <button
+                        type="submit"
+                        class="review-btn review-btn-remove"
+                    >
+                        Remove
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
     {% else %}
         <p>No {{ name }} configuration has been generated yet.</p>
     {% endif %}
 </section>
 {% endfor %}
 
+<section class="review-export">
+    <h2>Export Configurations</h2>
+
+    {% if ready_for_export %}
+        <p>
+            {{ total_configs }} saved configuration(s) are ready
+            for export.
+        </p>
+
+        <a
+            class="review-btn review-btn-download"
+            href="{{ url_for('download_all_configs') }}"
+        >
+            Download ZIP
+        </a>
+    {% else %}
+        <p>
+            Generate at least one configuration to enable ZIP export.
+        </p>
+    {% endif %}
+</section>
 {% endblock %}

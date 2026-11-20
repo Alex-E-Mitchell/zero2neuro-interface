@@ -3,12 +3,13 @@ import sys
 from pathlib import Path
 
 from flask import Flask, render_template, request
+from flask_wtf.csrf import CSRFProtect
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "python"))
 
 from config_generator import generate_network_config
 from parser_validator import validate_config
-from config_store import save_config, clear_config
+from config_store import save_config
 from config_rules import (
     NETWORK_ARCHITECTURES,
     DROPOUT_RULES,
@@ -22,6 +23,8 @@ from experiment_page import register_experiment_page
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or os.urandom(32)
+csrf = CSRFProtect()
+csrf.init_app(app)
 register_data_page(app)
 register_review_page(app)
 register_experiment_page(app)
@@ -31,9 +34,6 @@ register_experiment_page(app)
 def network():
     config = None
     error = None
-    
-    if request.method == "POST":
-        clear_config("network")
 
     values, arguments, errors = prepare_network_form(
         request.form if request.method == "POST" else None

@@ -190,10 +190,10 @@ class TestCnnForm(unittest.TestCase):
                 if name in ("conv_padding", "conv_activation"):
                     self.assertIn('selected disabled>Choose an option', page)
 
-    def test_invalid_cnn_clears_previous_saved_network(self):
+    def test_invalid_cnn_preserves_previous_saved_network(self):
         self.client.post("/", data=self.fields)
         self.client.post("/", data=dict(self.fields, conv_kernel_size="oops"))
-        self.assertNotIn("--network_type=cnn", self.client.get("/review").get_data(as_text=True))
+        self.assertIn("--network_type=cnn", self.client.get("/review").get_data(as_text=True))
 
     def test_cnn_common_dense_fields_are_used(self):
         page = self.client.post("/", data=dict(self.fields, hidden_units="64, 32", dropout="0.2",

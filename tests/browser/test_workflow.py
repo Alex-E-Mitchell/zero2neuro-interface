@@ -64,21 +64,26 @@ def test_forms_to_review_and_downloaded_zip(page, tmp_path, cnn):
     expect(page.locator('#config-text')).to_contain_text('--epochs=5000')
     experiment = page.locator('#config-text').inner_text()
     navigate(page, 'Review')
-    expect(page.get_by_text('All three configurations are available for export.')).to_be_visible()
-    expected = {'network.txt': network, 'data.txt': data, 'experiment.txt': experiment}
+    expect(page.get_by_text('3 saved configuration(s) are ready for export.')).to_be_visible()
+    expected = {'network_1.txt': network, 'data_1.txt': data, 'experiment_1.txt': experiment}
     if not cnn:
         reference = Path(__file__).resolve().parents[2] / 'examples/xor'
         for name, content in expected.items():
-            assert content.strip() == (reference / name).read_text().strip()
+            reference_name = name.replace('_1.txt', '.txt')
+            assert content.strip() == (reference / reference_name).read_text().strip()
     # Check individual downloads as well as the ZIP, not just the button labels.
     for name, content in expected.items():
+        config_type = name.split('_')[0]
         with page.expect_download() as event:
-            page.get_by_role('link', name=f'Download {name}', exact=True).click()
+            page.locator(
+                f'a[href^="/review/download/{config_type}/"]'
+            ).click()
         download = event.value
-        assert download.suggested_filename == name
+        assert download.suggested_filename.startswith(f'{config_type}_')
+        assert download.suggested_filename.endswith('.txt')
         assert Path(download.path()).read_text().strip() == content.strip()
     with page.expect_download() as event:
-        page.get_by_role('link', name='Download All Configurations (.zip)').click()
+        page.get_by_role('link', name='Download ZIP', exact=True).click()
     download = event.value
     assert download.suggested_filename == 'zero2neuro_config.zip'
     target = tmp_path / download.suggested_filename
@@ -89,7 +94,7 @@ def test_forms_to_review_and_downloaded_zip(page, tmp_path, cnn):
             assert archive.read(name).decode().strip() == content.strip()
 
 
-def test_network_error_correction_removes_stale_download(page):
+def test_network_error_correction_preserves_saved_configuration(page):
     fill_network(page)
     generate(page)
     expect(page.locator('#config-text')).to_be_visible()
@@ -102,8 +107,8 @@ def test_network_error_correction_removes_stale_download(page):
     # Read Review in a second tab without discarding the form being corrected.
     review = page.context.new_page()
     review.goto(page.url + 'review')
-    expect(review.get_by_role('link', name='Download network.txt', exact=True)).to_have_count(0)
-    expect(review.get_by_role('link', name='Download All Configurations (.zip)')).to_have_count(0)
+    expect(review.locator('a[href^="/review/download/network/"]')).to_have_count(1)
+    expect(review.get_by_role('link', name='Download ZIP', exact=True)).to_be_visible()
     review.close()
     page.locator('#form-errors').get_by_role('link').first.click()
     expect(page.locator('#hidden_units')).to_be_focused()
@@ -156,12 +161,19 @@ def test_fresh_browser_session_cannot_download_another_users_config(page, new_co
     fill_network(page)
     generate(page)
     navigate(page, 'Review')
-    expect(page.get_by_role('link', name='Download network.txt', exact=True)).to_be_visible()
+    expect(page.locator('a[href^="/review/download/network/"]')).to_be_visible()
     other = new_context().new_page()
     other.goto(app_url + '/review')
-    expect(other.get_by_text('Configuration is incomplete.', exact=True)).to_be_visible()
-    expect(other.get_by_role('link', name='Download network.txt', exact=True)).to_have_count(0)
-    assert other.request.get(app_url + '/review/download/network').status == 404
+    expect(other.get_by_text(
+        'No network configuration has been generated yet.'
+    )).to_be_visible()
+    expect(other.locator('a[href^="/review/download/network/"]')).to_have_count(0)
+    download_path = page.locator(
+        'a[href^="/review/download/network/"]'
+    ).get_attribute('href')
+
+    assert download_path is not None
+    assert other.request.get(app_url + download_path).status == 404
 
 
 def test_unsent_drafts_return_and_clear_is_scoped_to_one_page(page):
